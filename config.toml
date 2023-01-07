@@ -4,6 +4,22 @@ title = "Massimiliano Donini's Tech Blog"
 theme = "m10c"
 avatar = "/static/images/avatar/me/png"
 contentDir = "content"
+SectionPagesMenu = "main"
+paginate = 8
+
+[menu]
+  [[menu.main]]
+    name = "Home"
+    url = "/"
+    weight = 1
+  [[menu.main]]
+    name = "About"
+    url = "/about/"
+    weight = 2
+  [[menu.main]]
+    name = "Tags"
+    url = "/tags/"
+    weight = 3
 
 [params]
   author = "Massimiliano Donini"
