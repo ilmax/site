@@ -25,6 +25,15 @@ params:
     lightColor: '#afbac4'
     lightestColor: '#ffffff'
     primaryColor: '#3399ff'
+  shareButtons:
+    size: small
+    networks:
+      - facebook
+      - twitter
+      - email
+      - reddit
+    icon: solid
+    buttonMargin: 0.2em
   giscus:
     repo: ilmax/site
     repoID: R_kgDOIvGqCw

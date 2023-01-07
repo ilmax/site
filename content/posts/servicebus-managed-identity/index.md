@@ -2,7 +2,7 @@
 title: "Using Managed Identity with Azure WebJobs and Service Bus"
 date: 2022-05-24T10:01:30Z
 draft: false
-tags: ["azure", "terraform", "servicebus", "managedidentity"]
+tags: ["azure", "terraform", "servicebus", "managed-identity"]
 ---
 
 Managed Service Identity (or MSI for short) allows Azure resources to connect to Azure services that supports AD authentication (see the full list [here](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/services-azure-active-directory-support)) without using secrets. 
