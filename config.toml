@@ -1,17 +1,17 @@
-baseURL = 'https://ilmax.github.io/site/'
-languageCode = 'en-us'
-title = 'Massimiliano Donini's Tech Blog'
-theme = 'm10c'
+baseURL = "https://ilmax.github.io/site/"
+languageCode = "en-us"
+title = "Massimiliano Donini's Tech Blog"
+theme = "m10c"
 
 [params]
-  author = 'Massimiliano Donini'
-  description = 'My adventures in Tech'
+  author = "Massimiliano Donini"
+  description = "My adventures in Tech"
 
 
   [[params.social]]
     icon = "github"
     name = "GitHub"
-    url = "https://github.com/ilmax
+    url = "https://github.com/ilmax"
 
 
   [[params.social]]
