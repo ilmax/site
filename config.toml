@@ -2,6 +2,7 @@ baseURL = "https://ilmax.github.io/site/"
 languageCode = "en-us"
 title = "Massimiliano Donini's Tech Blog"
 theme = "m10c"
+enableRobotsTXT = true
 contentDir = "content"
 SectionPagesMenu = "main"
 paginate = 8
