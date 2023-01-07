@@ -1,0 +1,20 @@
+baseURL = 'https://ilmax.github.io/site/'
+languageCode = 'en-us'
+title = 'Massimiliano Donini's Tech Blog'
+theme = 'm10c'
+
+[params]
+  author = 'Massimiliano Donini'
+  description = 'My adventures in Tech'
+
+
+  [[params.social]]
+    icon = "github"
+    name = "GitHub"
+    url = "https://github.com/ilmax
+
+
+  [[params.social]]
+    icon = "twitter"
+    name = "Twitter"
+    url = "https://twitter.com/maxx_don"
