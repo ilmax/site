@@ -22,6 +22,7 @@ paginate = 8
 [params]
   author = "Massimiliano Donini"
   description = "My adventures in Tech"
+  menu_item_separator = " | "
 
   [params.style]
     darkestColor = "#242930"
