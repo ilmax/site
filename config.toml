@@ -3,6 +3,7 @@ languageCode = "en-us"
 title = "Massimiliano Donini's Tech Blog"
 theme = "m10c"
 avatar = "/static/images/avatar/me/png"
+enableRobotsTXT = true
 
 [params]
   author = "Massimiliano Donini"
