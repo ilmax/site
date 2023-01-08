@@ -1,4 +1,4 @@
-baseURL = "https://ilmax.github.io/"
+baseURL = "https://ilmax.github.io/site"
 languageCode = "en-us"
 title = "Massimiliano Donini's Tech Blog"
 theme = "m10c"
