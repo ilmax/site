@@ -1,0 +1,160 @@
+<!doctype html><html lang=en-us><head><title>Implement Azure AD Workload Identity on AKS with terraform // Massimiliano Donini's Tech Blog</title><link rel="shortcut icon" href=/favicon.ico><meta charset=utf-8><meta name=generator content="Hugo 0.109.0"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=author content="Massimiliano Donini"><meta name=description content><link rel=stylesheet href=/css/main.min.5ee90fa3a9edd9072516463d33e8dec8c82b0d04ec6abb341066c4d94f957c19.css><meta name=twitter:card content="summary"><meta name=twitter:title content="Implement Azure AD Workload Identity on AKS with terraform"><meta name=twitter:description content="Azure makes it very easy to create managed identities for a variety of services (e.g. Azure Functions, App Services, Logic Apps&mldr;), but when we want to implement it for Azure Kubernetes Service, things gets just a bit more complicated.
+First of all we have few options to choose from:
+AAD Pod Identity (deprecated) Azure AD Workload Identity What we discuss in this post, azwi for brevity. Both solutions aims to associate a pod with an identity in Azure Active Directory so we can grant this identity permissions to access another resource (i."><meta property="og:title" content="Implement Azure AD Workload Identity on AKS with terraform"><meta property="og:description" content="Azure makes it very easy to create managed identities for a variety of services (e.g. Azure Functions, App Services, Logic Apps&mldr;), but when we want to implement it for Azure Kubernetes Service, things gets just a bit more complicated.
+First of all we have few options to choose from:
+AAD Pod Identity (deprecated) Azure AD Workload Identity What we discuss in this post, azwi for brevity. Both solutions aims to associate a pod with an identity in Azure Active Directory so we can grant this identity permissions to access another resource (i."><meta property="og:type" content="article"><meta property="og:url" content="https://ilmax.github.io/posts/azwi-k8s/"><meta property="article:section" content="posts"><meta property="article:published_time" content="2022-02-24T09:55:39+00:00"><meta property="article:modified_time" content="2022-02-24T09:55:39+00:00"></head><body><header class=app-header><a href=https://ilmax.github.io/><img class=app-header-avatar src=/avatar.jpg alt="Massimiliano Donini"></a>
+<span class=app-header-title>Massimiliano Donini's Tech Blog</span><p>My adventures in Tech</p><nav class=app-header-menu><a class=app-header-menu-item href=/>Home</a>
+|
+<a class=app-header-menu-item href=/about/>About</a>
+|
+<a class=app-header-menu-item href=/tags/>Tags</a></nav><div class=app-header-social><a href=https://github.com/ilmax target=_blank rel="noreferrer noopener me"><svg viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-github"><title>GitHub</title><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37.0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44.0 0020 4.77 5.07 5.07.0 0019.91 1S18.73.65 16 2.48a13.38 13.38.0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07.0 005 4.77 5.44 5.44.0 003.5 8.55c0 5.42 3.3 6.61 6.44 7A3.37 3.37.0 009 18.13V22"/></svg></a><a href=https://twitter.com/maxx_don target=_blank rel="noreferrer noopener me"><svg viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-twitter"><title>Twitter</title><path d="M23 3a10.9 10.9.0 01-3.14 1.53 4.48 4.48.0 00-7.86 3v1A10.66 10.66.0 013 4s-4 9 5 13a11.64 11.64.0 01-7 2c9 5 20 0 20-11.5a4.5 4.5.0 00-.08-.83A7.72 7.72.0 0023 3z"/></svg></a><a href=https://www.linkedin.com/in/massimiliano-donini/ target=_blank rel="noreferrer noopener me"><svg viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-linkedin"><title>LinkedIn</title><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></a></div></header><main class=app-container><article class=post><header class=post-header><p><img class=post-header-image src=/azwi.webp alt="Implement Azure AD Workload Identity on AKS with terraform"><br></p><h1 class=post-title>Implement Azure AD Workload Identity on AKS with terraform</h1><div class=post-meta><div><svg viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-calendar"><title>calendar</title><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Feb 24, 2022</div><div><svg viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-clock"><title>clock</title><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>7 min read</div><div><svg viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tag"><title>tag</title><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83.0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg><a class=tag href=https://ilmax.github.io/tags/azure/>azure</a>
+<a class=tag href=https://ilmax.github.io/tags/terraform/>terraform</a>
+<a class=tag href=https://ilmax.github.io/tags/helm/>helm</a>
+<a class=tag href=https://ilmax.github.io/tags/kubernetes/>kubernetes</a></div></div></header><div class=post-content><p>Azure makes it very easy to create managed identities for a variety of services (e.g. Azure Functions, App Services, Logic Apps&mldr;), but when we want to implement it for Azure Kubernetes Service, things gets just a bit more complicated.</p><p>First of all we have few options to choose from:</p><ul><li><a href=https://github.com/Azure/aad-pod-identity>AAD Pod Identity</a> (deprecated)</li><li><a href=https://azure.github.io/azure-workload-identity/docs/introduction.html>Azure AD Workload Identity</a> What we discuss in this post, azwi for brevity.</li></ul><p>Both solutions aims to associate a pod with an identity in Azure Active Directory so we can grant this identity permissions to access another resource (i.e. a storage account or an Azure Sql Database).</p><p>As described on the documentation, azwi is the suggested approach from now on since Azure AD Pod Identity has been (somehow) deprecated as you can read on the <a href=https://github.com/Azure/aad-pod-identity>github repo</a> and on the blog post <a href=https://cloudblogs.microsoft.com/opensource/2022/01/18/announcing-azure-active-directory-azure-ad-workload-identity-for-kubernetes/>here</a>.</p><p>The documentation describes Azure AD Workload Identity as follows:</p><blockquote><p>Azure AD Workload Identity for Kubernetes integrates with the capabilities native to Kubernetes to federate with external identity providers. This approach is simpler to use and deploy, and overcomes several limitations in Azure AD Pod Identity</p></blockquote><p>Assuming you already have an AKS cluster up & running (I won&rsquo;t cover the creation of it here), in order to configure <strong>Azure AD Workload Identity</strong> we need to:</p><ol><li>Configure the AKS cluster to enable OIDC issuer</li><li>Deploy the Azure AD Workload Identity helm chart to the cluster</li><li>Create a Federated Azure AD Application + a Service Principal</li><li>Create a kubernetes service account manifest with some azwi specific metadata</li><li>Configure our pods to run with the service account</li></ol><h2 id=1-configure-the-aks-cluster-to-enable-oidc-issuer>1. Configure the AKS cluster to enable OIDC issuer</h2><p>Unfortunately since OIDC issuer feature is still in preview at the time of writing (February 2022), there&rsquo;s no built-in support in terraform, but this is a one time only operation, you can read more about it <a href=https://docs.microsoft.com/en-us/azure/aks/cluster-configuration#oidc-issuer-preview>here</a>.</p><p>So we need to enable it from the azure cli with the following command:</p><blockquote><p>Enable <strong>az cli</strong> preview feature</p></blockquote><pre tabindex=0><code># Install the aks-preview extension
+az extension add --name aks-preview
+
+# Update the extension to make sure you have the latest version installed
+az extension update --name aks-preview
+</code></pre><blockquote><p>Enable OIDC issuer on an existing cluster</p></blockquote><pre tabindex=0><code>az aks update -n aks -g myResourceGroup --enable-oidc-issuer
+</code></pre><p>After we enable the <strong>OIDC issuer</strong> feature we need to get the OIDC issuer url that will be used in the next step to federate the Azure AD Application, this can be done with the following command:</p><pre tabindex=0><code>az aks show --resource-group &lt;resource_group&gt; --name &lt;cluster_name&gt; --query &#34;oidcIssuerProfile.issuerUrl&#34; -otsv
+</code></pre><h2 id=2-deploy-the-azure-ad-workload-identity-helm-chart-to-the-cluster>2. Deploy the Azure AD Workload Identity helm chart to the cluster</h2><p>We can deploy a helm chart in several ways, in this case I decided to deploy the chart using terraform.
+You can achieve that with the following terraform code:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-hcl data-lang=hcl><span style=display:flex><span><span style=color:#66d9ef>resource</span> <span style=color:#e6db74>&#34;kubernetes_namespace&#34; &#34;azure-workload-identity-system&#34;</span> {
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>metadata</span> {
+</span></span><span style=display:flex><span>    annotations <span style=color:#f92672>=</span> {
+</span></span><span style=display:flex><span>      name <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;azure-workload-identity-system&#34;</span>
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>    name   <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;azure-workload-identity-system&#34;</span>
+</span></span><span style=display:flex><span>    labels <span style=color:#f92672>=</span> <span style=color:#66d9ef>var</span>.<span style=color:#66d9ef>tags</span>
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>resource</span> <span style=color:#e6db74>&#34;helm_release&#34; &#34;azure-workload-identity-system&#34;</span> {
+</span></span><span style=display:flex><span>  name       <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;workload-identity-webhook&#34;</span>
+</span></span><span style=display:flex><span>  namespace  <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;azure-workload-identity-system&#34;</span>
+</span></span><span style=display:flex><span>  chart      <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;workload-identity-webhook&#34;</span>
+</span></span><span style=display:flex><span>  repository <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;https://azure.github.io/azure-workload-identity/charts&#34;</span>
+</span></span><span style=display:flex><span>  wait       <span style=color:#f92672>=</span> <span style=color:#66d9ef>false</span>
+</span></span><span style=display:flex><span>  depends_on <span style=color:#f92672>=</span> [<span style=color:#66d9ef>kubernetes_namespace</span>.<span style=color:#66d9ef>azure</span><span style=color:#960050;background-color:#1e0010>-</span><span style=color:#66d9ef>workload</span><span style=color:#960050;background-color:#1e0010>-</span><span style=color:#66d9ef>identity</span><span style=color:#960050;background-color:#1e0010>-</span><span style=color:#66d9ef>system</span>]
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>set</span> {
+</span></span><span style=display:flex><span>    name  <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;azureTenantID&#34;</span>
+</span></span><span style=display:flex><span>    value <span style=color:#f92672>=</span> <span style=color:#66d9ef>var</span>.<span style=color:#66d9ef>azureTenantID</span>
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>Here we create a new kubernetes namespace and we deploy the helm release. I choose to deploy with terraform the helm charts that I depend on (i.e. my application dependencies, for example Azure AD Workload Identity and kong that I use as my ingress).
+We need to set the <strong>azureTenantID</strong> value when we deploy the helm chart with the current azure tenant id.
+I read the current tenant id in the root module with the <code>data "azurerm_subscription" "current" {}</code> data source and pass in as a variable in the child module.</p><h2 id=3-create-a-federated-azure-ad-application--a-service-principal>3. Create a Federated Azure AD Application + a Service Principal</h2><p>Here we need to create an Azure AD Application + a Service Principal and federate the application with the OIDC Issuer so that Azure AD can exchange a token issued to the pod with a token that can be used to access other Azure resources.</p><p>We can achieve it with a bit of terraform:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-hcl data-lang=hcl><span style=display:flex><span><span style=color:#66d9ef>locals</span> {
+</span></span><span style=display:flex><span>  namespace_name <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;app-ns&#34;</span><span style=color:#75715e>
+</span></span></span><span style=display:flex><span><span style=color:#75715e>  ## This should match the name of the service account created by helm chart
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>  service_account_name <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;app-${local.namespace_name}&#34;</span>
+</span></span><span style=display:flex><span>}<span style=color:#75715e>
+</span></span></span><span style=display:flex><span><span style=color:#75715e>
+</span></span></span><span style=display:flex><span><span style=color:#75715e>## Azure AD application that represents the app
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>resource</span> <span style=color:#e6db74>&#34;azuread_application&#34; &#34;app&#34;</span> {
+</span></span><span style=display:flex><span>  display_name <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;sp-app-${var.env}&#34;</span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>resource</span> <span style=color:#e6db74>&#34;azuread_service_principal&#34; &#34;app&#34;</span> {
+</span></span><span style=display:flex><span>  application_id <span style=color:#f92672>=</span> <span style=color:#66d9ef>azuread_application</span>.<span style=color:#66d9ef>app</span>.<span style=color:#66d9ef>application_id</span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>resource</span> <span style=color:#e6db74>&#34;azuread_service_principal_password&#34; &#34;app&#34;</span> {
+</span></span><span style=display:flex><span>  service_principal_id <span style=color:#f92672>=</span> <span style=color:#66d9ef>azuread_service_principal</span>.<span style=color:#66d9ef>app</span>.<span style=color:#66d9ef>id</span>
+</span></span><span style=display:flex><span>}<span style=color:#75715e>
+</span></span></span><span style=display:flex><span><span style=color:#75715e>
+</span></span></span><span style=display:flex><span><span style=color:#75715e>## Azure AD federated identity used to federate kubernetes with Azure AD
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>resource</span> <span style=color:#e6db74>&#34;azuread_application_federated_identity_credential&#34; &#34;app&#34;</span> {
+</span></span><span style=display:flex><span>  application_object_id <span style=color:#f92672>=</span> <span style=color:#66d9ef>azuread_application</span>.<span style=color:#66d9ef>app</span>.<span style=color:#66d9ef>object_id</span>
+</span></span><span style=display:flex><span>  display_name          <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;fed-identity-app-${var.env}&#34;</span>
+</span></span><span style=display:flex><span>  description           <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;The federated identity used to federate K8s with Azure AD with the app service running in k8s ${var.env}&#34;</span>
+</span></span><span style=display:flex><span>  audiences             <span style=color:#f92672>=</span> [<span style=color:#e6db74>&#34;api://AzureADTokenExchange&#34;</span>]
+</span></span><span style=display:flex><span>  issuer                <span style=color:#f92672>=</span> <span style=color:#66d9ef>var</span>.<span style=color:#66d9ef>oidc_k8s_issuer_url</span>
+</span></span><span style=display:flex><span>  subject               <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;system:serviceaccount:${local.namespace_name}:${local.service_account_name}&#34;</span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>output</span> <span style=color:#e6db74>&#34;app_client_id&#34;</span> {
+</span></span><span style=display:flex><span>  value <span style=color:#f92672>=</span> <span style=color:#66d9ef>azuread_application</span>.<span style=color:#66d9ef>app</span>.<span style=color:#66d9ef>application_id</span>
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>Here we need to specify a couple of things:</p><ul><li>The OIDC Issuer url that we got from step 1, (I&rsquo;m using a variable here to hold it&rsquo;s value)</li><li>The subject that should follow a specific format: <em>system:serviceaccount:{k8s_namespace}:{k8s_service_account_name}</em></li></ul><blockquote><p>The namespace should match the namespace you will use to install your app in kubernetes and the Service Account name should match what you define in the kubernetes manifest.</p></blockquote><h2 id=4-create-a-kubernetes-service-account-manifest-with-some-specific-metadata>4. Create a kubernetes service account manifest with some specific metadata</h2><p>Here we will create the service account manifest and add the required metadata to allow the azwi do it&rsquo;s magic.</p><p>Here&rsquo;s the code to create a service account and the corresponding value file:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yml data-lang=yml><span style=display:flex><span><span style=color:#75715e># serviceaccount.yaml</span>
+</span></span><span style=display:flex><span><span style=color:#f92672>apiVersion</span>: <span style=color:#ae81ff>v1</span>
+</span></span><span style=display:flex><span><span style=color:#f92672>kind</span>: <span style=color:#ae81ff>ServiceAccount</span>
+</span></span><span style=display:flex><span><span style=color:#f92672>metadata</span>:
+</span></span><span style=display:flex><span>  <span style=color:#f92672>name</span>: {{ <span style=color:#ae81ff>include &#34;app.serviceAccountName&#34; . }}</span>
+</span></span><span style=display:flex><span>  <span style=color:#f92672>labels</span>:
+</span></span><span style=display:flex><span>    {{- <span style=color:#ae81ff>include &#34;app.labels&#34; . | nindent 4 }}</span>
+</span></span><span style=display:flex><span>    {{- <span style=color:#ae81ff>with .Values.serviceAccount.labels }}</span>
+</span></span><span style=display:flex><span>    {{- <span style=color:#ae81ff>toYaml . | nindent 4 }}</span>
+</span></span><span style=display:flex><span>    {{- <span style=color:#ae81ff>end }}</span>
+</span></span><span style=display:flex><span>  {{- <span style=color:#ae81ff>with .Values.serviceAccount.annotations }}</span>
+</span></span><span style=display:flex><span>  <span style=color:#f92672>annotations</span>:
+</span></span><span style=display:flex><span>    {{- <span style=color:#ae81ff>toYaml . | nindent 4 }}</span>
+</span></span><span style=display:flex><span>  {{- <span style=color:#ae81ff>end }}</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># value.yaml</span>
+</span></span><span style=display:flex><span><span style=color:#f92672>serviceAccount</span>:
+</span></span><span style=display:flex><span>  <span style=color:#75715e># Labels to add to the service account</span>
+</span></span><span style=display:flex><span>  <span style=color:#f92672>labels</span>:
+</span></span><span style=display:flex><span>    <span style=color:#f92672>azure.workload.identity/use</span>: <span style=color:#e6db74>&#34;true&#34;</span> <span style=color:#75715e># Represents the service account is to be used for workload identity, see https://azure.github.io/azure-workload-identity/docs/topics/service-account-labels-and-annotations.html</span>
+</span></span><span style=display:flex><span>  <span style=color:#75715e># Annotations to add to the service account</span>
+</span></span><span style=display:flex><span>  <span style=color:#f92672>annotations</span>:
+</span></span><span style=display:flex><span>    <span style=color:#f92672>azure.workload.identity/client-id</span>: <span style=color:#e6db74>&#34;{Client Id of the azure ad application}&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#f92672>azure.workload.identity/tenant-id</span>: <span style=color:#e6db74>&#34;{Tenant Id of you Azure subscription}&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#f92672>azure.workload.identity/service-account-token-expiration</span>: <span style=color:#e6db74>&#34;86400&#34;</span> <span style=color:#75715e># Token is valid for 1 day</span>
+</span></span></code></pre></div><blockquote><p>Please note that you can get the <strong>client id</strong> from the output of the step 3 and that the name of the service account should match what you set in the subject of the <strong>azuread_application_federated_identity_credential</strong>.</p></blockquote><h2 id=5-configure-our-pods-to-run-with-the-service-account>5. Configure our pods to run with the service account</h2><p>We need to make sure our pods run with the service account created in step 4.
+In order to do that we just need to specify the <strong>serviceAccountName</strong> with the name of the Service Account in our <em>deployment.yaml</em> file as shown below:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yml data-lang=yml><span style=display:flex><span><span style=color:#f92672>apiVersion</span>: <span style=color:#ae81ff>apps/v1</span>
+</span></span><span style=display:flex><span><span style=color:#f92672>kind</span>: <span style=color:#ae81ff>Deployment</span>
+</span></span><span style=display:flex><span><span style=color:#f92672>metadata</span>:
+</span></span><span style=display:flex><span>  <span style=color:#f92672>name</span>: {{ <span style=color:#ae81ff>include &#34;app.fullname&#34; . }}</span>
+</span></span><span style=display:flex><span>  <span style=color:#f92672>labels</span>:
+</span></span><span style=display:flex><span>    {{- <span style=color:#ae81ff>include &#34;app.labels&#34; . | nindent 4 }}</span>
+</span></span><span style=display:flex><span><span style=color:#f92672>spec</span>:
+</span></span><span style=display:flex><span>  {{- <span style=color:#ae81ff>if not .Values.autoscaling.enabled }}</span>
+</span></span><span style=display:flex><span>  <span style=color:#f92672>replicas</span>: {{ <span style=color:#ae81ff>.Values.replicaCount }}</span>
+</span></span><span style=display:flex><span>  {{- <span style=color:#ae81ff>end }}</span>
+</span></span><span style=display:flex><span>  <span style=color:#f92672>selector</span>:
+</span></span><span style=display:flex><span>    <span style=color:#f92672>matchLabels</span>:
+</span></span><span style=display:flex><span>      {{- <span style=color:#ae81ff>include &#34;app.selectorLabels&#34; . | nindent 6 }}</span>
+</span></span><span style=display:flex><span>  <span style=color:#f92672>template</span>:
+</span></span><span style=display:flex><span>    <span style=color:#f92672>metadata</span>:
+</span></span><span style=display:flex><span>      {{- <span style=color:#ae81ff>with .Values.podAnnotations }}</span>
+</span></span><span style=display:flex><span>      <span style=color:#f92672>annotations</span>:
+</span></span><span style=display:flex><span>        {{- <span style=color:#ae81ff>toYaml . | nindent 8 }}</span>
+</span></span><span style=display:flex><span>      {{- <span style=color:#ae81ff>end }}</span>
+</span></span><span style=display:flex><span>      <span style=color:#f92672>labels</span>:
+</span></span><span style=display:flex><span>        {{- <span style=color:#ae81ff>include &#34;app.selectorLabels&#34; . | nindent 8 }}</span>
+</span></span><span style=display:flex><span>    <span style=color:#f92672>spec</span>:
+</span></span><span style=display:flex><span>      {{- <span style=color:#ae81ff>with .Values.imagePullSecrets }}</span>
+</span></span><span style=display:flex><span>      <span style=color:#f92672>imagePullSecrets</span>:
+</span></span><span style=display:flex><span>        {{- <span style=color:#ae81ff>toYaml . | nindent 8 }}</span>
+</span></span><span style=display:flex><span>      {{- <span style=color:#ae81ff>end }}</span>
+</span></span><span style=display:flex><span>      <span style=color:#f92672>serviceAccountName</span>: {{ <span style=color:#ae81ff>include &#34;app.serviceAccountName&#34; . }}</span>
+</span></span><span style=display:flex><span>...<span style=color:#ae81ff>.</span>
+</span></span></code></pre></div><p>This is all it takes, after we&rsquo;re done here, we can grant our Service Principal some rights to, for example, allow it to access a storage account in the following way:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-hcl data-lang=hcl><span style=display:flex><span><span style=color:#75715e>## Lookup our storage account
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>data</span> <span style=color:#e6db74>&#34;azurerm_storage_account&#34; &#34;storage&#34;</span> {
+</span></span><span style=display:flex><span>  name                <span style=color:#f92672>=</span> <span style=color:#66d9ef>var</span>.<span style=color:#66d9ef>storage_account_name</span>
+</span></span><span style=display:flex><span>  resource_group_name <span style=color:#f92672>=</span> <span style=color:#66d9ef>var</span>.<span style=color:#66d9ef>storage_account_rg</span>
+</span></span><span style=display:flex><span>}<span style=color:#75715e>
+</span></span></span><span style=display:flex><span><span style=color:#75715e>
+</span></span></span><span style=display:flex><span><span style=color:#75715e>## Role assignment to the application
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>resource</span> <span style=color:#e6db74>&#34;azurerm_role_assignment&#34; &#34;app_storage_contributor&#34;</span> {
+</span></span><span style=display:flex><span>  scope                <span style=color:#f92672>=</span> <span style=color:#66d9ef>data</span>.<span style=color:#66d9ef>azurerm_storage_account</span>.<span style=color:#66d9ef>app</span>.<span style=color:#66d9ef>id</span>
+</span></span><span style=display:flex><span>  role_definition_name <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;Storage Blob Data Contributor&#34;</span>
+</span></span><span style=display:flex><span>  principal_id         <span style=color:#f92672>=</span> <span style=color:#66d9ef>azuread_service_principal</span>.<span style=color:#66d9ef>app</span>.<span style=color:#66d9ef>id</span>
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>This is my <code>required_providers</code> configuration:</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-hcl data-lang=hcl><span style=display:flex><span><span style=color:#66d9ef>terraform</span> {
+</span></span><span style=display:flex><span>  <span style=color:#66d9ef>required_providers</span> {
+</span></span><span style=display:flex><span>    azurerm <span style=color:#f92672>=</span> {
+</span></span><span style=display:flex><span>      source  <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;hashicorp/azurerm&#34;</span>
+</span></span><span style=display:flex><span>      version <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;~&gt; 2.84&#34;</span>
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>    azuread <span style=color:#f92672>=</span> {
+</span></span><span style=display:flex><span>      source  <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;hashicorp/azuread&#34;</span>
+</span></span><span style=display:flex><span>      version <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;~&gt; 2.14.0&#34;</span>
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    helm <span style=color:#f92672>=</span> {
+</span></span><span style=display:flex><span>      version <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;2.4.1&#34;</span>
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>  }
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>That&rsquo;s all for now, I hope you find this interesting, if you have any questions/suggestions, don&rsquo;t hesitate to comment!</p></div><div class=post-footer></div></article></main></body></html>
