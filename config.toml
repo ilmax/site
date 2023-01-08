@@ -3,8 +3,6 @@ languageCode = "en-us"
 title = "Massimiliano Donini's Tech Blog"
 theme = "m10c"
 enableRobotsTXT = true
-contentDir = "content"
-SectionPagesMenu = "main"
 paginate = 8
 
 [menu]
@@ -24,7 +22,6 @@ paginate = 8
 [params]
   author = "Massimiliano Donini"
   description = "My adventures in Tech"
-  
   [params.style]
     darkestColor = "#242930"
     darkColor = "#353b43"
@@ -41,3 +38,8 @@ paginate = 8
     icon = "twitter"
     name = "Twitter"
     url = "https://twitter.com/maxx_don"
+
+  [[params.social]]
+    icon = "linkedin"
+    name = "LinkedIn"
+    url = "https://www.linkedin.com/in/massimiliano-donini/"

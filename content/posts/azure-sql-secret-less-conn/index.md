@@ -3,7 +3,7 @@ title: "Configure secret-less connection from App Services to Azure Sql via terr
 date: 2022-02-16T18:17:46Z
 draft: false
 tags: ["azure", "terraform", "sql", "managed-identity"]
-featured_image: cover.jpg
+featuredImage: cover.jpg
 ---
 
 It's been a while since we can connect App services to Azure Sql in a secret-less fashion, using [managed service identity](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview) (MSI for brevity from now onwards). 
