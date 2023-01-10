@@ -57,7 +57,7 @@ I think an example may be better to understand what's the output of the code
 
 # How I did it
 
-Before starting I came up with some principles to use a guidelines when writing my HCL modules, those are:
+Before starting I came up with a set of principles to use a guidelines when writing my HCL modules, those are:
 
 1. One module for every different resource type used
 2. Every module that needs to resources defined in other modules, read these resources with a data source
@@ -73,7 +73,32 @@ Before starting I came up with some principles to use a guidelines when writing 
 10. Client code can only reference higher level modules
 11. Higher level modules should have the least number of secret possible
 
-TODO: Add directory tree output
+> Please note that these are principles I came up with and that make sense in my specific scenario, your mileage may vary
+
+## Directory structure
+
+The principles stated above helped me come up with a directory structure that looks like the following:
+
+```bash
+├── environments
+│   ├── acc
+│   ├── dev
+│   ├── prod
+│   └── tst
+├── modules
+│   ├── private                --> Lower level modules
+│   │   ├── global
+│   │   │   ├── global_azure_service_1          e.g. Cosmos Db 
+│   │   │   ├── global_azure_service_2          e.g. vNET
+│   │   │   ├── global_azure_service_3          e.g. App Service Plan
+│   │   └── service
+│   │       ├── service_specific_resource_1     e.g. App service
+│   │       ├── service_specific_resource_2     e.g. Cosmos container
+│   │       ├── service_specific_resource_3     e.g. Sql Database
+│   └── public                 --> Higher level modules
+│       ├── environment     
+│       └── webapp
+```
 
 After coming up with this list of principles, I started creating the HCL module for each resource type we use, import it in a local state, run terraform plan to ensure there are no changes and repeat till I create all the modules.
 
@@ -84,9 +109,96 @@ Since I ended up importing the resources over and over and over again, I decided
 The script looks like this:
 
 ```ps
+terraform init // Comment this out after the first execution
+
+# Get all the items from terraform state and put it inside an array
+$stateItems = $(terraform state list)
+
+function ImportIfNotExists {
+    param (
+        [String]$resourceName,
+        [String]$resourceId
+    )
+
+    if ($resourceId -eq $null -or $resourceId -eq "") {
+        Write-Warning "Resource id for $resourceName is null"
+        return
+    }
+
+    if ($stateItems -notcontains $resourceName.Replace("\", "")) {
+        Write-Host "Importing $resourceName with id $resourceId"
+        terraform import "$resourceName" "$resourceId"
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "Error importing $resourceName with id $resourceId"
+        } else {
+            Write-Host "$resourceName imported"
+        }
+    } else {
+        Write-Host "$resourceName already exists"
+    }
+}
+
+$env = "DEV"
+$subscriptionId = "your-subscription-id-here"
+$spokeResourceGroupName = "myrg-spoke-$env".ToLower()
+$hubResourceGroupName = "myrg-hub-$env".ToLower()
+
+$ErrorActionPreference  = "Stop"
+
+## Resource group import
+ImportIfNotExists 'module.environment.azurerm_resource_group.spoke_rg' "/subscriptions/$subscriptionId/resourceGroups/$spokeResourceGroupName"
+ImportIfNotExists 'module.environment.azurerm_resource_group.hub_rg' "/subscriptions/$subscriptionId/resourceGroups/$hubResourceGroupName"
 ```
 
-This allows me to quickly import resources and run and re-run the same over and over without worring about re-importing a resource that' already part of the state.
+This allows me to quickly import resources and run and re-run the same over and over without worring about re-importing a resource that's already part of the state.
+
+On top of that you can make the script reusable for all environments with some minimal modifications, what I have to change for each environment are the following: (your mileage may vary depending on the resources you use)
+
+- Cosmos Sql Role Definition (The Role id uses a guid so it's different for every role definition)
+- Cosmos Sql Role Assignment (same as above)
+- RBAC role assignment
+- Automation account job schedules
+- AAD Groups
+- AAD Groups membership
+
+If you really want to, you can make the script look up these resources using the azure cli, for example I'm doing this to lookup AAD groups since they follow a naming convention:
+
+```ps
+ImportIfNotExists 'sample.azuread_group.your_group_name' $(az ad group show --group "your-group-name-prefix-$env" --query id --output tsv)
+```
+
+you can also get it done for other cases e.g. if you want to look up the role assignment for a given role and group you can do something like:
+
+```ps
+ImportIfNotExists 'sample.azurerm_role_assignment.your_group_assingments' $(az role assignment list --scope {your-scope} --query "[?principalName=='{you-principal-name}' && roleDefinitionName=='{your-role-name}'].id" -o tsv)
+```
+
+where:
+
+- {your-scope} it's the resource you assigned the RBAC role assignment to (e.g. the resource group or a specific resource)
+- {you-principal-name} may be the user name or group name or managed identity name of the principal that will be granted the role
+- {your-role-name} it's the name of the RBAC roles you assigned (e.g. Contributor)
+
+This is quite powerful and allows you to make the script parametric enough to allow you to reuse the same script for all environments.
+
+## Quirks
+
+If you have declared resources that uses `for_each` in HCL, the name of the resource may contain (based on what you're foreaching) a string, e.g.
+imagine you're creating several service bus topic using a for_each in the following way:
+
+```hcl
+TODO add topics definition
+```
+
+Then the terraform identifier will be something like the following: `module.servicebus.azurerm_servicebus_topic.topics["{topic-name}"]`.
+In order to make terraform and powershell play nicely toghether in the import script, you have to write the above this way:
+
+```ps
+ImportIfNotExists 'module.servicebus.azurerm_servicebus_topic.topics[\"{topic-name}\"]' "{servicebus-resource-id}"
+```
+
+To avoid the terraform error: import requires you to specify two arguments
+
 
 ## Useful resources
 
@@ -97,4 +209,8 @@ In order to import a resource you need to find it's unique identifier in Azure a
 
 The first one may be familiar to everyone, it's the azure command line tool, the second is a bit less known in my opinion but still an excellent resource to look into the definition of the various resources.
 
-This work took quite a bit of time
+This work took quite a bit of time but in the end I was able to import all the resource in all the environments and come up with ideomatic HCL code.
+
+I hope you find this helpful!
+
+Till the next time.
