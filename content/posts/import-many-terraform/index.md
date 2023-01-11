@@ -5,62 +5,61 @@ draft: true
 tags: ["azure", "terraform", "devops"]
 ---
 
-In my current company, we have a discrete number of Azure resources for each evnrionemnt (DEV, TEST, ecc).
 
-Before digging into what and how, let me briefly give you a quick description of what's there.
+This post describes my personal journey to import several hundred Azure resources in terraform. Before digging into what and how to let me give you a brief description of what's there.
 
-Me and my fellow team members are building software for our company, we have aroun 50 indipendent services that requires some specific Azure resources (imagine a Sql database or a Storage container) and on top of that we have all the service agnostic infrastructure..
+In my current company, we manage several Azure resources multiplied by a few environments (DEV, TEST, etc.). Every environment looks pretty much the same and it mostly differs by product SKUs, database sizes, etc.
 
-All these resources are created/update by various means and forms, some use ARM templates, some use PowerShell scripts, some Azure cli scripts and so on.
+Me and my fellow team members are building a microservices solution, we have around 50 independent services deployed in Azure that require some specific resources (imagine a SQL database or a Storage container), and on top of that, we have all the service agnostic infrastructure.
 
-We have a share repository that contains all of these scripts and, project by project we reference what we need in the deployment pipeline.
+All these resources are created/updated by various means and forms, some use ARM templates, some use PowerShell scripts, some use Azure cli scripts and so on.
 
-This works ok, but it has several problems:
+All the aforementioned scripts are placed in a shared repository and every project references what it needs in its deployment pipeline.
 
-1. We use different technologies to setup infra and that makes it harder for newcomers to get up to speed
+This approach works, but it has several problems:
+
+1. We use different technologies to deploy infrastructure and that makes it harder for newcomers to get up to speed quickly
 2. Deployments take longer than they could
-3. You don't have a preview of what's going to happen when the deployment runs
-4. Re-applying the code may not fix [configuration drift](https://wiki.gccollab.ca/index.php?title=Technology_Trends/Infrastructure_as_Code&mobileaction=toggle_view_desktop#Configuration_Drift) especially the PowerShell/az cli scripts
+3. It's impossible to have a preview of what's going to happen when the deployment runs
+4. Re-deploying infrastructure may not fix all the [configuration drift](https://wiki.gccollab.ca/index.php?title=Technology_Trends/Infrastructure_as_Code&mobileaction=toggle_view_desktop#Configuration_Drift) especially the PowerShell/az cli scripts
 5. Possibly more
 
-Hence we decided to move to terraform since it can address all the point above and, according to GitHub octoverse 2022, HCL was the fastest growing language (more info [here](https://octoverse.github.com/2022/top-programming-languages))
+Hence we decided to move to terraform since it can address all the points above and, according to GitHub octoverse 2022, HCL was the fastest growing language in 2022 (more info [here](https://octoverse.github.com/2022/top-programming-languages))
 
 # The challenges
 
- As you may know, if a resource has been created outside terraform, it needs to be imported in order to be managed with terraform in the future.
- Importing resources is not difficult, on the provider documentation at the bottom of the page you can find the command to execute to import a given resource.
+If you start on a greenfield project everything is quite easy, but as you may know if a resource has been created outside terraform, it needs to be imported in order to be managed with terraform in the future.
+Importing resources is not difficult, on the provider documentation site, at the bottom of the page of every resource, you can find the command to execute to import a given resource.
 
- My problem was that I had around 160 global resources, multiplied by all the various environments + between 5-10 resource service dendent multiplied by the number of services ~50 multiplied by the number of environments.
+My problem was that I had hundreds of them, around 160 global resources, multiplied by all the various environments + between 5-10 resource service dependent multiplied by the number of services ~50 multiplied by the number of environments.
 
- As you can imagine this adds up very quickly, especially because it's a bit of a tedious work since, in order to import a resourvce, you need to define it first, on top of that you need to come up with the final module organization since you have to pass the resource identifier for terraform to the import command.
+As you can imagine this adds up very quickly, especially because importing resources it's a tedious task since, in order to import a resource, you need to define it first, and on top of that you need to come up with the final module organization since you have to pass the resource identifier for terraform to the import command and sometimes figuring out the Azure resource id can also be challenging.
  
- At first this seemed like an herculeous effort so I started looking elsewhere.
+At first, this seemed like a herculean effort so I started looking around hoping to find a tool that could help with a bulk import.
 
- ## Aztfy
+## Aztfy
 [Aztfy](https://github.com/Azure/aztfy) is a tool developed by Microsoft that allows you to bulk import resources, it has some configuration so you can specify what to import, the names to import and so on.
-The problem I had with this tool is twofold:
+After spending some time with the tool, I quickly realized it may be a no-go. The problem I had with this tool is twofold:
 
 1. It doesn't generate reproducible terraform configurations
 2. It doesn't generate terraform idiomatic code
 
-Let me expand on those two:
+Let me expand on those:
 
-Not generating reproducible configurations means that after an import, when you run terraform plan, you may still have changes that you need to fix manually or worse, fail due to same validation problems. 
-These limitation are clearly documented on the project README and I could live with them.
+Not generating reproducible configurations means that after an import, when you run terraform plan, you may still have changes that you need to fix manually, or worse, terraform may fail due to validation problems. 
+This limitation is clearly documented in the project README and I could live with it.
 
-Not generating idiomatic code is a bit more annoying to me, since it requires to manually change most of the imported code to make use of variables or reference a parent resource.
-This means that pretty much all the code that aztfy will output, needs to be adjusted/modified and if you move the resource around in a different module, then you either start moving resources in the state as well, or you need to import it again.
+Not generating idiomatic code is a bit more annoying to me, since it requires manually changing most parts of the imported code to make use of variables or reference a parent resource.
+This means that all the code that aztfy will output, needs to be adjusted/modified, moreover if you decide to reorganize the code and move the resource in a different module (hence changing the terraform resource id) after it has been imported, then you have to start modifying the terraform state manually, or you may need to import it again.
 
-Given the following downsides I decided to use it only marginally but start writing my configuration from scratch.
-
-I think an example may be better to understand what's the output of the code
+Given the following downsides, I decided to use it only marginally and instead start writing my configuration from scratch.
 
 # How I did it
 
-Before starting I came up with a set of principles to use a guidelines when writing my HCL modules, those are:
+Before starting I came up with a set of principles to use guidelines when writing HCL modules, those are:
 
 1. One module for every different resource type used
-2. Every module that needs to resources defined in other modules, read these resources with a data source
+2. For every module that needs to resources defined in other modules, read these resources with a data source
 3. All the modules input are defined in a file called variables.tf
 4. All the permission related stuff (RBAC, AAD group membership) will go in a file called permission.tf
 5. All the networking configuration (Firewall rules, VNet, Private endpoints and so on) will go in a file called networking.tf
