@@ -6,7 +6,7 @@ tags: ["azure", "terraform", "devops"]
 ---
 
 
-This post describes my personal journey to import several hundred Azure resources in terraform. Before digging into what and how to let me give you a brief description of what's there.
+This post describes my journey to import several hundred Azure resources in terraform. Before digging into what and how to let me give you a brief description of what's there.
 
 In my current company, we manage several Azure resources multiplied by a few environments (DEV, TEST, etc.). Every environment looks pretty much the same and it mostly differs by product SKUs, database sizes, etc.
 
@@ -26,9 +26,9 @@ This approach works, but it has several problems:
 
 Hence we decided to move to terraform since it can address all the points above and, according to GitHub octoverse 2022, HCL was the fastest growing language in 2022 (more info [here](https://octoverse.github.com/2022/top-programming-languages))
 
-# The challenges
+## The import challenge
 
-If you start on a greenfield project everything is quite easy, but as you may know if a resource has been created outside terraform, it needs to be imported in order to be managed with terraform in the future.
+If you start on a greenfield project everything is quite easy but, as you may know, if a resource has been created outside terraform, it needs to be imported to be managed with terraform in the future.
 Importing resources is not difficult, on the provider documentation site, at the bottom of the page of every resource, you can find the command to execute to import a given resource.
 
 My problem was that I had hundreds of them, around 160 global resources, multiplied by all the various environments + between 5-10 resource service dependent multiplied by the number of services ~50 multiplied by the number of environments.
@@ -37,7 +37,7 @@ As you can imagine this adds up very quickly, especially because importing resou
  
 At first, this seemed like a herculean effort so I started looking around hoping to find a tool that could help with a bulk import.
 
-## Aztfy
+### Aztfy
 [Aztfy](https://github.com/Azure/aztfy) is a tool developed by Microsoft that allows you to bulk import resources, it has some configuration so you can specify what to import, the names to import and so on.
 After spending some time with the tool, I quickly realized it may be a no-go. The problem I had with this tool is twofold:
 
@@ -47,34 +47,34 @@ After spending some time with the tool, I quickly realized it may be a no-go. Th
 Let me expand on those:
 
 Not generating reproducible configurations means that after an import, when you run terraform plan, you may still have changes that you need to fix manually, or worse, terraform may fail due to validation problems. 
-This limitation is clearly documented in the project README and I could live with it.
+This limitation is documented in the project README and I could live with it.
 
 Not generating idiomatic code is a bit more annoying to me, since it requires manually changing most parts of the imported code to make use of variables or reference a parent resource.
 This means that all the code that aztfy will output, needs to be adjusted/modified, moreover if you decide to reorganize the code and move the resource in a different module (hence changing the terraform resource id) after it has been imported, then you have to start modifying the terraform state manually, or you may need to import it again.
 
 Given the following downsides, I decided to use it only marginally and instead start writing my configuration from scratch.
 
-# How I did it
+## How I did it
 
 Before starting I came up with a set of principles to use guidelines when writing HCL modules, those are:
 
 1. One module for every different resource type used
-2. For every module that needs to resources defined in other modules, read these resources with a data source
-3. All the modules input are defined in a file called variables.tf
-4. All the permission related stuff (RBAC, AAD group membership) will go in a file called permission.tf
+2. For every module that needs access to resources defined in other modules, read these resources with a data source
+3. All the module's inputs are defined in a file called variables.tf
+4. All the permissions-related stuff (RBAC, AAD group membership) will go in a file called permission.tf
 5. All the networking configuration (Firewall rules, VNet, Private endpoints and so on) will go in a file called networking.tf
-6. All the modules outputs will go in a file called output.tf
-7. These lower level modules, will be invoked by a higher level module where most of the naming logic will be
-8. Lower level modules can only be called by higher level modules
-9. Several higher level modules will be created:
+6. All the module's outputs will go in a file called output.tf
+7. These lower-level modules will be invoked by a higher-level module where most of the naming logic will be
+8. Lower-level modules can only be called by higher-level modules
+9. Several higher-level modules will be created:
     - Environment specific with all the global resources 
-    - Several service specific ones, one for each type of service
-10. Client code can only reference higher level modules
+    - Several service-specific ones, one for each type of service
+10. Client code can only reference higher-level modules
 11. Higher level modules should have the least number of secret possible
 
 > Please note that these are principles I came up with and that make sense in my specific scenario, your mileage may vary
 
-## Directory structure
+### Directory structure
 
 The principles stated above helped me come up with a directory structure that looks like the following:
 
@@ -85,7 +85,7 @@ The principles stated above helped me come up with a directory structure that lo
 │   ├── prod
 │   └── tst
 ├── modules
-│   ├── private                --> Lower level modules
+│   ├── private                --> Lower-level modules
 │   │   ├── global
 │   │   │   ├── global_azure_service_1          e.g. Cosmos Db 
 │   │   │   ├── global_azure_service_2          e.g. vNET
@@ -94,16 +94,18 @@ The principles stated above helped me come up with a directory structure that lo
 │   │       ├── service_specific_resource_1     e.g. App service
 │   │       ├── service_specific_resource_2     e.g. Cosmos container
 │   │       ├── service_specific_resource_3     e.g. Sql Database
-│   └── public                 --> Higher level modules
+│   └── public                 --> Higher-level modules
 │       ├── environment     
 │       └── webapp
 ```
 
-After coming up with this list of principles, I started creating the HCL module for each resource type we use, import it in a local state, run terraform plan to ensure there are no changes and repeat till I create all the modules.
+After coming up with this list of principles, I started creating the HCL module for each resource type, importing it in a local state, running terraform plan to ensure there are no changes and repeating till I create all the modules.
 
-In order to make the plan/import phase quick, I was applying the changes on a single module basis. 
+To make the plan/import phase quick, I was applying the changes on a single module basis. 
 
-Since I ended up importing the resources over and over and over again, I decided to write a small powershell script to help me speed up the process.
+Since I ended up importing the resources over and over and over again, I decided to write a small PowerShell script to help me speed up the process. This script specifically tries not to reimport a resource that's already imported and, via PowerShell string interpolation, it makes Azure resource Ids reusable across several environments.
+
+>Please note that the last point depends on your resources naming conventions.
 
 The script looks like this:
 
@@ -149,7 +151,7 @@ ImportIfNotExists 'module.environment.azurerm_resource_group.spoke_rg' "/subscri
 ImportIfNotExists 'module.environment.azurerm_resource_group.hub_rg' "/subscriptions/$subscriptionId/resourceGroups/$hubResourceGroupName"
 ```
 
-This allows me to quickly import resources and run and re-run the same over and over without worring about re-importing a resource that's already part of the state.
+This allows me to quickly import resources and run and re-run the same over and over without worrying about re-importing a resource that's already part of the state.
 
 On top of that you can make the script reusable for all environments with some minimal modifications, what I have to change for each environment are the following: (your mileage may vary depending on the resources you use)
 
@@ -160,7 +162,7 @@ On top of that you can make the script reusable for all environments with some m
 - AAD Groups
 - AAD Groups membership
 
-If you really want to, you can make the script look up these resources using the azure cli, for example I'm doing this to lookup AAD groups since they follow a naming convention:
+If you want to, you can make the script look up these resources using the azure cli, for example, I'm doing this to lookup AAD groups since they follow a naming convention:
 
 ```ps
 ImportIfNotExists 'sample.azuread_group.your_group_name' $(az ad group show --group "your-group-name-prefix-$env" --query id --output tsv)
@@ -178,11 +180,13 @@ where:
 - {you-principal-name} may be the user name or group name or managed identity name of the principal that will be granted the role
 - {your-role-name} it's the name of the RBAC roles you assigned (e.g. Contributor)
 
-This is quite powerful and allows you to make the script parametric enough to allow you to reuse the same script for all environments.
+This is quite powerful and allows you to make the script parametric enough to allow you to reuse the same script for all environments. 
+
+>It's also worth considering though that the import operation will be executed just once, so it may be quick to just do a find replace at times.
 
 ## Quirks
 
-If you have declared resources that uses `for_each` in HCL, the name of the resource may contain (based on what you're foreaching) a string, e.g.
+If you have declared resources that use `for_each` in HCL, the name of the resource may contain (based on what you're foreach-ing) a string, e.g.
 imagine you're creating several service bus topic using a for_each in the following way:
 
 ```hcl
@@ -190,7 +194,7 @@ TODO add topics definition
 ```
 
 Then the terraform identifier will be something like the following: `module.servicebus.azurerm_servicebus_topic.topics["{topic-name}"]`.
-In order to make terraform and powershell play nicely toghether in the import script, you have to write the above this way:
+To make terraform and PowerShell play nicely together in the import script, you have to write the above this way:
 
 ```ps
 ImportIfNotExists 'module.servicebus.azurerm_servicebus_topic.topics[\"{topic-name}\"]' "{servicebus-resource-id}"
@@ -200,15 +204,14 @@ To avoid the terraform error: import requires you to specify two arguments
 
 
 ## Useful resources
+To import a resource you need to find its unique identifier in Azure and this is not always easily doable from the portal so I took advantage of the following tools to make my life simpler
 
-In order to import a resource you need to find it's unique identifier in Azure and this is not always easily doable from the portal so I took advantage of the following tools to make my life simpler
-
-- az cli
+- [az cli](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [resources.azure.com](resource.azure.com)
 
 The first one may be familiar to everyone, it's the azure command line tool, the second is a bit less known in my opinion but still an excellent resource to look into the definition of the various resources.
 
-This work took quite a bit of time but in the end I was able to import all the resource in all the environments and come up with ideomatic HCL code.
+This work took quite a bit of time but in the end, I was able to import all the resources in all the environments and come up with idiomatic HCL code.
 
 I hope you find this helpful!
 
