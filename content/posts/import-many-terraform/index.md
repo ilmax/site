@@ -151,9 +151,9 @@ ImportIfNotExists 'module.environment.azurerm_resource_group.spoke_rg' "/subscri
 ImportIfNotExists 'module.environment.azurerm_resource_group.hub_rg' "/subscriptions/$subscriptionId/resourceGroups/$hubResourceGroupName"
 ```
 
-This allows me to quickly import resources and run and re-run the same over and over without worrying about re-importing a resource that's already part of the state.
+This script allows me to quickly import resources and iterate faster since it allows me to re-run the same over and over without worrying about re-importing a resource that's already part of the state.
 
-On top of that you can make the script reusable for all environments with some minimal modifications, what I have to change for each environment are the following: (your mileage may vary depending on the resources you use)
+On top of that, you can make the script reusable for multiple environments with few modifications, what is a bit more complex and I usually have to do manually is: 
 
 - Cosmos Sql Role Definition (The Role id uses a guid so it's different for every role definition)
 - Cosmos Sql Role Assignment (same as above)
@@ -162,13 +162,15 @@ On top of that you can make the script reusable for all environments with some m
 - AAD Groups
 - AAD Groups membership
 
-If you want to, you can make the script look up these resources using the azure cli, for example, I'm doing this to lookup AAD groups since they follow a naming convention:
+> Please note that your mileage may vary depending on the resources you use
+
+If you want to, you can enahnce the script to also look up these resources using the azure cli and a bit of [JMESPath](https://learn.microsoft.com/en-us/cli/azure/query-azure-cli?tabs=concepts,bash), for example, I'm doing this to look up AAD groups since in my case they follow a naming convention:
 
 ```ps1
-ImportIfNotExists 'sample.azuread_group.your_group_name' $(az ad group show --group "your-group-name-prefix-$env" --query id --output tsv)
+ImportIfNotExists 'sample.azuread_group.your_group_name' $(az ad group show --group "{your-group-name-prefix}-$env" --query id --output tsv)
 ```
 
-you can also get it done for other cases e.g. if you want to look up the role assignment for a given role and group you can do something like:
+Here below you can see an example where I'm employing JMESPath to further filter the result of az cli to look up the role assignment for a given role and group:
 
 ```ps1
 ImportIfNotExists 'sample.azurerm_role_assignment.your_group_assingments' $(az role assignment list --scope {your-scope} --query "[?principalName=='{you-principal-name}' && roleDefinitionName=='{your-role-name}'].id" -o tsv)
@@ -176,11 +178,11 @@ ImportIfNotExists 'sample.azurerm_role_assignment.your_group_assingments' $(az r
 
 where:
 
-- {your-scope} it's the resource you assigned the RBAC role assignment to (e.g. the resource group or a specific resource)
-- {you-principal-name} may be the user name or group name or managed identity name of the principal that will be granted the role
-- {your-role-name} it's the name of the RBAC roles you assigned (e.g. Contributor)
+- **{your-scope}** it's the resource you assigned the RBAC role assignment to (e.g. the resource group or a specific resource)
+- **{you-principal-name}** may be the user name or group name or managed identity name of the principal that will be granted the role
+- **{your-role-name}** it's the name of the RBAC roles you assigned (e.g. Contributor)
 
-This is quite powerful and allows you to make the script parametric enough to allow you to reuse the same script for all environments. 
+This is quite powerful and allows you to make the script parametric enough to allow you to reuse it for all environments. 
 
 >It's also worth considering though that the import operation will be executed just once, so it may be quick to just do a find replace at times.
 
@@ -194,6 +196,7 @@ TODO add topics definition
 ```
 
 Then the terraform identifier will be something like the following: `module.servicebus.azurerm_servicebus_topic.topics["{topic-name}"]`.
+
 To make terraform and PowerShell play nicely together in the import script, you have to write the above this way:
 
 ```ps1
@@ -201,7 +204,6 @@ ImportIfNotExists 'module.servicebus.azurerm_servicebus_topic.topics[\"{topic-na
 ```
 
 To avoid the terraform error: import requires you to specify two arguments
-
 
 ## Useful resources
 To import a resource you need to find its unique identifier in Azure and this is not always easily doable from the portal so I took advantage of the following tools to make my life simpler
