@@ -24,7 +24,7 @@ This approach works, but it has several problems:
 4. Re-deploying infrastructure may not fix all the [configuration drift](https://wiki.gccollab.ca/index.php?title=Technology_Trends/Infrastructure_as_Code&mobileaction=toggle_view_desktop#Configuration_Drift) especially the PowerShell/az cli scripts
 5. Possibly more
 
-Hence we decided to move to terraform since it can address all the points above and, according to GitHub octoverse 2022, HCL was the fastest growing language in 2022 (more info [here](https://octoverse.github.com/2022/top-programming-languages))
+Hence we decided to move to terraform since it can address all the points above and, according to GitHub octoverse 2022, HCL was the fastest growing language in 2021-2022 (more info [here](https://octoverse.github.com/2022/top-programming-languages))
 
 ## The import challenge
 
@@ -109,7 +109,7 @@ Since I ended up importing the resources over and over and over again, I decided
 
 The script looks like this:
 
-```ps
+```ps1
 terraform init // Comment this out after the first execution
 
 # Get all the items from terraform state and put it inside an array
@@ -164,13 +164,13 @@ On top of that you can make the script reusable for all environments with some m
 
 If you want to, you can make the script look up these resources using the azure cli, for example, I'm doing this to lookup AAD groups since they follow a naming convention:
 
-```ps
+```ps1
 ImportIfNotExists 'sample.azuread_group.your_group_name' $(az ad group show --group "your-group-name-prefix-$env" --query id --output tsv)
 ```
 
 you can also get it done for other cases e.g. if you want to look up the role assignment for a given role and group you can do something like:
 
-```ps
+```ps1
 ImportIfNotExists 'sample.azurerm_role_assignment.your_group_assingments' $(az role assignment list --scope {your-scope} --query "[?principalName=='{you-principal-name}' && roleDefinitionName=='{your-role-name}'].id" -o tsv)
 ```
 
@@ -196,7 +196,7 @@ TODO add topics definition
 Then the terraform identifier will be something like the following: `module.servicebus.azurerm_servicebus_topic.topics["{topic-name}"]`.
 To make terraform and PowerShell play nicely together in the import script, you have to write the above this way:
 
-```ps
+```ps1
 ImportIfNotExists 'module.servicebus.azurerm_servicebus_topic.topics[\"{topic-name}\"]' "{servicebus-resource-id}"
 ```
 
