@@ -3,6 +3,7 @@ title: "Integration testing with EF Core, part 2"
 date: 2021-04-06T16:25:33Z
 draft: false
 tags: ["efcore", "testing", "dotnet", "docker"]
+series: ["Ef Core Integration testing"]
 ---
 
 In the [first part](https://dev.to/maxx_don/integration-testing-with-ef-core-part-1-1l40) of this mini series, I described how I implemented integration tests with EF core and SQL Server running on top of a Docker container. The approach explained in the first blog post works but it has one very big downside, the ability to debug integration tests.
