@@ -1,6 +1,6 @@
 baseURL: 'https://ilmax.github.io/site'
 languageCode: en-us
-title: Massimiliano Donini's Tech Blog
+title: Massimiliano's Tech Chronicles
 theme: m10c
 enableRobotsTXT: true
 paginate: 8
@@ -16,6 +16,7 @@ menu:
       url: /tags/
       weight: 3
 params:
+  favicon: /site/favicon.ico
   author: Massimiliano Donini
   description: My adventures in Tech
   menu_item_separator: ' | '
@@ -56,3 +57,8 @@ params:
     - icon: linkedin
       name: LinkedIn
       url: 'https://www.linkedin.com/in/massimiliano-donini/'
+
+taxonomies:
+  category: categories
+  tag: tags
+  series: series
