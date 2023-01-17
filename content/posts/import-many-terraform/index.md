@@ -1,39 +1,48 @@
 ---
-title: "My experience on importing hundreds of existing Azure resources in terraform"
+title: "Terraform Tips & Tricks: Managing Large-Scale Azure Resource Imports"
 date: 2023-01-08T14:44:21Z
 draft: true
-tags: ["azure", "terraform", "devops"]
+tags: ["azure", "Terraform", "devops"]
 ---
 
 
-This post describes my journey to import several hundred Azure resources in terraform. Before digging into what and how to let me give you a brief description of what's there.
+This post describes my journey to import several hundred Azure resources in Terraform. Before digging into the what and the how let me give you a brief description of our environment's infrastructure.
 
-In my current company, we manage several Azure resources multiplied by a few environments (DEV, TEST, etc.). Every environment looks pretty much the same and it mostly differs by product SKUs, database sizes, etc.
+In my current company, we manage many Azure resources for each environment and we have a few of them (DEV, TEST, etc.). Every environment looks pretty much the same and it mostly differs by product SKUs, database sizes, etc.
 
-Me and my fellow team members are building a microservices solution, we have around 50 independent services deployed in Azure that require some specific resources (imagine a SQL database or a Storage container), and on top of that, we have all the service agnostic infrastructure.
+My fellow team members and I are building a microservices solution, we have around 50 independent services deployed in Azure that require some specific resources (imagine a SQL database or a Storage container), and on top of that, we have all the service agnostic infrastructure.
 
-All these resources are created/updated by various means and forms, some use ARM templates, some use PowerShell scripts, some use Azure cli scripts and so on.
+All these resources aren't created/updated in the same way, some use ARM templates, some use PowerShell scripts, some use Azure cli scripts and so on.
+This is mostly because we need to work around some tooling limitations e.g. you can't create resources in Azure Active Directory using ARM templates.
 
 All the aforementioned scripts are placed in a shared repository and every project references what it needs in its deployment pipeline.
 
 This approach works, but it has several problems:
 
 1. We use different technologies to deploy infrastructure and that makes it harder for newcomers to get up to speed quickly
-2. Deployments take longer than they could
-3. It's impossible to have a preview of what's going to happen when the deployment runs
+2. Deployments take longer than necessary
+3. It's impossible to have a preview of the changes that are going to be applied at deployment time
 4. Re-deploying infrastructure may not fix all the [configuration drift](https://wiki.gccollab.ca/index.php?title=Technology_Trends/Infrastructure_as_Code&mobileaction=toggle_view_desktop#Configuration_Drift) especially the PowerShell/az cli scripts
-5. Possibly more
 
-Hence we decided to move to terraform since it can address all the points above and, according to GitHub octoverse 2022, HCL was the fastest growing language in 2021-2022 (more info [here](https://octoverse.github.com/2022/top-programming-languages))
+I'm sure I missed several other points but these are the most painful points.
+
+Hence we decided to move to Terraform since it can address all the points above and, according to GitHub Octoverse 2022, HCL was the fastest growing language in 2021-2022 (more info [here](https://octoverse.github.com/2022/top-programming-languages))
 
 ## The import challenge
 
-If you start on a greenfield project everything is quite easy but, as you may know, if a resource has been created outside terraform, it needs to be imported to be managed with terraform in the future.
+If you start on a greenfield project everything is quite easy, but as you may know, if a resource has been created outside Terraform, it needs to be imported to be managed with Terraform in the future.
 Importing resources is not difficult, on the provider documentation site, at the bottom of the page of every resource, you can find the command to execute to import a given resource.
 
 My problem was that I had hundreds of them, around 160 global resources, multiplied by all the various environments + between 5-10 resource service dependent multiplied by the number of services ~50 multiplied by the number of environments.
 
-As you can imagine this adds up very quickly, especially because importing resources it's a tedious task since, in order to import a resource, you need to define it first, and on top of that you need to come up with the final module organization since you have to pass the resource identifier for terraform to the import command and sometimes figuring out the Azure resource id can also be challenging.
+As you can imagine this adds up very quickly, especially because importing resources is a tedious task. 
+To import a resource in Terraform you need a couple of things:
+- Create the resource in your configuration files
+- The Terraform resource id 
+- The Azure resource id
+
+To get the Terraform resource id, you may need to come up with the final module structure because if you use nested modules, the module name would be part of the resource id.
+Figuring out the Azure resource id can also be challenging for some nested resources, e.g. a cosmos role assignment requires some az cli gymnastics.
  
 At first, this seemed like a herculean effort so I started looking around hoping to find a tool that could help with a bulk import.
 
@@ -41,16 +50,16 @@ At first, this seemed like a herculean effort so I started looking around hoping
 [Aztfy](https://github.com/Azure/aztfy) is a tool developed by Microsoft that allows you to bulk import resources, it has some configuration so you can specify what to import, the names to import and so on.
 After spending some time with the tool, I quickly realized it may be a no-go. The problem I had with this tool is twofold:
 
-1. It doesn't generate reproducible terraform configurations
-2. It doesn't generate terraform idiomatic code
+1. It doesn't generate reproducible Terraform configurations
+2. It doesn't generate Terraform idiomatic code
 
 Let me expand on those:
 
-Not generating reproducible configurations means that after an import, when you run terraform plan, you may still have changes that you need to fix manually, or worse, terraform may fail due to validation problems. 
-This limitation is documented in the project README and I could live with it.
+Not generating reproducible configurations means that after an import, when you run Terraform plan, you may still have changes that you need to fix manually, or worse, Terraform may fail due to validation problems. 
+This limitation is documented in the project [README](https://github.com/Azure/aztfy#limitation) and I could live with it.
 
 Not generating idiomatic code is a bit more annoying to me, since it requires manually changing most parts of the imported code to make use of variables or reference a parent resource.
-This means that all the code that aztfy will output, needs to be adjusted/modified, moreover if you decide to reorganize the code and move the resource in a different module (hence changing the terraform resource id) after it has been imported, then you have to start modifying the terraform state manually, or you may need to import it again.
+This means that all the code that **aztfy** will output, needs to be adjusted/modified, moreover if you decide to reorganize the code and move the resource in a different module (hence changing the Terraform resource id) after it has been imported, then you have to start modifying the Terraform state manually, or you may need to import it again.
 
 Given the following downsides, I decided to use it only marginally and instead start writing my configuration from scratch.
 
@@ -99,7 +108,7 @@ The principles stated above helped me come up with a directory structure that lo
 │       └── webapp
 ```
 
-After coming up with this list of principles, I started creating the HCL module for each resource type, importing it in a local state, running terraform plan to ensure there are no changes and repeating till I create all the modules.
+After coming up with this list of principles, I started creating the HCL module for each resource type, importing it in a local state, running Terraform plan to ensure there are no changes and repeating till I create all the modules.
 
 To make the plan/import phase quick, I was applying the changes on a single module basis. 
 
@@ -110,10 +119,10 @@ Since I ended up importing the resources over and over and over again, I decided
 The script looks like this:
 
 ```ps1
-terraform init // Comment this out after the first execution
+Terraform init // Comment this out after the first execution
 
-# Get all the items from terraform state and put it inside an array
-$stateItems = $(terraform state list)
+# Get all the items from Terraform state and put it inside an array
+$stateItems = $(Terraform state list)
 
 function ImportIfNotExists {
     param (
@@ -128,7 +137,7 @@ function ImportIfNotExists {
 
     if ($stateItems -notcontains $resourceName.Replace("\", "")) {
         Write-Host "Importing $resourceName with id $resourceId"
-        terraform import "$resourceName" "$resourceId"
+        Terraform import "$resourceName" "$resourceId"
         if ($LASTEXITCODE -ne 0) {
             Write-Warning "Error importing $resourceName with id $resourceId"
         } else {
@@ -164,7 +173,7 @@ On top of that, you can make the script reusable for multiple environments with 
 
 > Please note that your mileage may vary depending on the resources you use
 
-If you want to, you can enahnce the script to also look up these resources using the azure cli and a bit of [JMESPath](https://learn.microsoft.com/en-us/cli/azure/query-azure-cli?tabs=concepts,bash), for example, I'm doing this to look up AAD groups since in my case they follow a naming convention:
+If you want to, you can enhance the script to also look up these resources using the azure cli and a bit of [JMESPath](https://learn.microsoft.com/en-us/cli/azure/query-azure-cli?tabs=concepts,bash), for example, I'm doing this to look up AAD groups since in my case they follow a naming convention:
 
 ```ps1
 ImportIfNotExists 'sample.azuread_group.your_group_name' $(az ad group show --group "{your-group-name-prefix}-$env" --query id --output tsv)
@@ -192,18 +201,30 @@ If you have declared resources that use `for_each` in HCL, the name of the resou
 imagine you're creating several service bus topic using a for_each in the following way:
 
 ```hcl
-TODO add topics definition
+resource "azurerm_servicebus_namespace" "example" {
+  name                = "tfex-servicebus-namespace"
+  location            = azurerm_resource_group.example.location
+  resource_group_name = azurerm_resource_group.example.name
+  sku                 = "Standard"
+}
+
+resource "azurerm_servicebus_topic" "example" {
+  name         = each.value
+  namespace_id = azurerm_servicebus_namespace.example.id
+
+  for_each var.topics
+}
 ```
 
-Then the terraform identifier will be something like the following: `module.servicebus.azurerm_servicebus_topic.topics["{topic-name}"]`.
+Then the Terraform identifier will be something like the following: `module.servicebus.azurerm_servicebus_topic.topics["{topic-name}"]`.
 
-To make terraform and PowerShell play nicely together in the import script, you have to write the above this way:
+To make Terraform and PowerShell play nicely together in the import script, you have to write the above this way:
 
 ```ps1
 ImportIfNotExists 'module.servicebus.azurerm_servicebus_topic.topics[\"{topic-name}\"]' "{servicebus-resource-id}"
 ```
 
-To avoid the terraform error: import requires you to specify two arguments
+To avoid the Terraform error: import requires you to specify two arguments
 
 ## Useful resources
 To import a resource you need to find its unique identifier in Azure and this is not always easily doable from the portal so I took advantage of the following tools to make my life simpler
@@ -211,7 +232,7 @@ To import a resource you need to find its unique identifier in Azure and this is
 - [az cli](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [resources.azure.com](resource.azure.com)
 
-The first one may be familiar to everyone, it's the azure command line tool, the second is a bit less known in my opinion but still an excellent resource to look into the definition of the various resources.
+The first one will be familiar to everyone, it's the azure command line tool and it's a must-have, the second one is a bit less known in my opinion but still an excellent resource to look into the definition of the various resources.
 
 This work took quite a bit of time but in the end, I was able to import all the resources in all the environments and come up with idiomatic HCL code.
 
