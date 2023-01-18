@@ -24,9 +24,9 @@ This approach works, but it has several problems:
 3. It's impossible to have a preview of the changes that are going to be applied at deployment time
 4. Re-deploying infrastructure may not fix all the [configuration drift](https://wiki.gccollab.ca/index.php?title=Technology_Trends/Infrastructure_as_Code&mobileaction=toggle_view_desktop#Configuration_Drift) especially the PowerShell/az cli scripts
 
-I'm sure I missed several other points but these are the most painful points.
+I'm sure I missed several other points but these are the most painful ones.
 
-Hence we decided to move to Terraform since it can address all the points above and, according to GitHub Octoverse 2022, HCL was the fastest growing language in 2021-2022 (more info [here](https://octoverse.github.com/2022/top-programming-languages))
+Hence we decided to move to Terraform since it can address all the points above and, according to [GitHub Octoverse 2022](https://octoverse.github.com/2022/top-programming-languages), HCL was the fastest growing language in 2021-2022.
 
 ## The import challenge
 
@@ -41,12 +41,19 @@ To import a resource in Terraform you need a couple of things:
 - The Terraform resource id 
 - The Azure resource id
 
-To get the Terraform resource id, you may need to come up with the final module structure because if you use nested modules, the module name would be part of the resource id.
+For example:
+```sh
+                |--------------Terraform resource id-------------------| |-----------------------------------------Azure resource id---------------------------------------------------------------|
+terraform import module.servicebus.azurerm_servicebus_namespace.example  /subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/mygroup1/providers/Microsoft.ServiceBus/namespaces/sbns1
+```
+
+To get the Terraform resource id, you may first need to come up with the final module structure because if you use modules, the module name would be part of the Terraform resource id (as can be seen above).
+
 Figuring out the Azure resource id can also be challenging for some nested resources, e.g. a cosmos role assignment requires some az cli gymnastics.
  
-At first, this seemed like a herculean effort so I started looking around hoping to find a tool that could help with a bulk import.
+This seemed like a herculean effort so I started looking around hoping to find a tool that could help with a bulk import.
 
-### Aztfy
+### Azure Terrafy - Aztfy
 [Aztfy](https://github.com/Azure/aztfy) is a tool developed by Microsoft that allows you to bulk import resources, it has some configuration so you can specify what to import, the names to import and so on.
 After spending some time with the tool, I quickly realized it may be a no-go. The problem I had with this tool is twofold:
 
@@ -56,23 +63,23 @@ After spending some time with the tool, I quickly realized it may be a no-go. Th
 Let me expand on those:
 
 Not generating reproducible configurations means that after an import, when you run Terraform plan, you may still have changes that you need to fix manually, or worse, Terraform may fail due to validation problems. 
-This limitation is documented in the project [README](https://github.com/Azure/aztfy#limitation) and I could live with it.
+This limitation is documented in the project [README](https://github.com/Azure/aztfy#limitation) and I could've lived with it.
 
-Not generating idiomatic code is a bit more annoying to me, since it requires manually changing most parts of the imported code to make use of variables or reference a parent resource.
-This means that all the code that **aztfy** will output, needs to be adjusted/modified, moreover if you decide to reorganize the code and move the resource in a different module (hence changing the Terraform resource id) after it has been imported, then you have to start modifying the Terraform state manually, or you may need to import it again.
+Not generating idiomatic code is a bit more problematic, since it requires manually changing most parts of the imported code to make use of variables or to reference a parent resource.
+This means that all the code that **aztfy** will output, needs to be adjusted/modified. Moreover, if you decide to reorganize the code and move resources in a different module (hence changing the Terraform resource id) after it has been imported, then you have to either start modifying the Terraform state manually, or you may need to import it all over again.
 
-Given the following downsides, I decided to use it only marginally and instead start writing my configuration from scratch.
+Given the above downsides, I decided to use it only marginally and instead start writing my configuration from scratch.
 
-## How I did it
+## My approach
 
-Before starting I came up with a set of principles to use guidelines when writing HCL modules, those are:
+Before starting I came up with a set of principles to use as guidelines when writing HCL modules, which are:
 
 1. One module for every different resource type used
 2. For every module that needs access to resources defined in other modules, read these resources with a data source
-3. All the module's inputs are defined in a file called variables.tf
-4. All the permissions-related stuff (RBAC, AAD group membership) will go in a file called permission.tf
-5. All the networking configuration (Firewall rules, VNet, Private endpoints and so on) will go in a file called networking.tf
-6. All the module's outputs will go in a file called output.tf
+3. All the module's inputs are defined in a file called `variables.tf`
+4. All the permissions-related stuff (RBAC, AAD group membership) will go in a file called `permission.tf`
+5. All the networking configuration (Firewall rules, VNet, Private endpoints and so on) will go in a file called `networking.tf`
+6. All the module's outputs will go in a file called `output.tf`
 7. These lower-level modules will be invoked by a higher-level module where most of the naming logic will be
 8. Lower-level modules can only be called by higher-level modules
 9. Several higher-level modules will be created:
@@ -80,6 +87,7 @@ Before starting I came up with a set of principles to use guidelines when writin
     - Several service-specific ones, one for each type of service
 10. Client code can only reference higher-level modules
 11. Higher level modules should have the least number of secret possible
+12. Lower-level modules shouldn't reference other lower-level modules
 
 > Please note that these are principles I came up with and that make sense in my specific scenario, your mileage may vary
 
@@ -108,11 +116,17 @@ The principles stated above helped me come up with a directory structure that lo
 │       └── webapp
 ```
 
-After coming up with this list of principles, I started creating the HCL module for each resource type, importing it in a local state, running Terraform plan to ensure there are no changes and repeating till I create all the modules.
+### Import Script
 
-To make the plan/import phase quick, I was applying the changes on a single module basis. 
+After coming up with this list of principles, I started creating the Terraform module for each resource type, importing it in a local state, running Terraform plan to ensure there are no changes and repeating till I created all the modules.
 
-Since I ended up importing the resources over and over and over again, I decided to write a small PowerShell script to help me speed up the process. This script specifically tries not to reimport a resource that's already imported and, via PowerShell string interpolation, it makes Azure resource Ids reusable across several environments.
+To make the plan/import phase quick, I was applying the changes on a single lower-level module basis. 
+
+Since I ended up importing the resources over and over and over again, I decided to write a small PowerShell script to help me speed up the process. 
+
+This script tries to address the two main paint points:
+- Do not re-import a resource that's already imported 
+- Simplify reuse across environments via PowerShell string interpolation, whenever Azure resource Ids are predictable.
 
 >Please note that the last point depends on your resources naming conventions.
 
@@ -162,7 +176,8 @@ ImportIfNotExists 'module.environment.azurerm_resource_group.hub_rg' "/subscript
 
 This script allows me to quickly import resources and iterate faster since it allows me to re-run the same over and over without worrying about re-importing a resource that's already part of the state.
 
-On top of that, you can make the script reusable for multiple environments with few modifications, what is a bit more complex and I usually have to do manually is: 
+As stated above, you can make the script reusable for multiple environments with few modifications. Some Azure resource ids are a bit more complex to figure out hence I usually do a manual lookup and find-and-replace.
+Some of those resources include:
 
 - Cosmos Sql Role Definition (The Role id uses a guid so it's different for every role definition)
 - Cosmos Sql Role Assignment (same as above)
@@ -187,9 +202,9 @@ ImportIfNotExists 'sample.azurerm_role_assignment.your_group_assingments' $(az r
 
 where:
 
-- **{your-scope}** it's the resource you assigned the RBAC role assignment to (e.g. the resource group or a specific resource)
-- **{you-principal-name}** may be the user name or group name or managed identity name of the principal that will be granted the role
-- **{your-role-name}** it's the name of the RBAC roles you assigned (e.g. Contributor)
+- **{your-scope}** is the resource you assigned the RBAC role assignment to (e.g. the resource group or a specific resource)
+- **{you-principal-name}** is the user name, group name or managed identity name of the principal that will be granted the role
+- **{your-role-name}** is the name of the RBAC roles you assigned (e.g. Contributor)
 
 This is quite powerful and allows you to make the script parametric enough to allow you to reuse it for all environments. 
 
