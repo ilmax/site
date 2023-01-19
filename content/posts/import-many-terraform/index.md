@@ -1,7 +1,7 @@
 ---
 title: "Terraform Tips & Tricks: Managing Large-Scale Azure Resource Imports"
 date: 2023-01-08T14:44:21Z
-draft: true
+draft: false
 tags: ["azure", "Terraform", "devops"]
 ---
 
@@ -223,7 +223,7 @@ resource "azurerm_servicebus_namespace" "example" {
   sku                 = "Standard"
 }
 
-resource "azurerm_servicebus_topic" "example" {
+resource "azurerm_servicebus_topic" "topics" {
   name         = each.value
   namespace_id = azurerm_servicebus_namespace.example.id
 
@@ -239,7 +239,7 @@ To make Terraform and PowerShell play nicely together in the import script, you 
 ImportIfNotExists 'module.servicebus.azurerm_servicebus_topic.topics[\"{topic-name}\"]' "{servicebus-resource-id}"
 ```
 
-To avoid the Terraform error: import requires you to specify two arguments
+To avoid the Terraform error: import requires you to specify two arguments.
 
 ## Useful resources
 To import a resource you need to find its unique identifier in Azure and this is not always easily doable from the portal so I took advantage of the following tools to make my life simpler
