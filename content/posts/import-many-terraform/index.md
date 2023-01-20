@@ -231,7 +231,10 @@ resource "azurerm_servicebus_topic" "topics" {
 }
 ```
 
-Then the Terraform identifier will be something like the following: `module.servicebus.azurerm_servicebus_topic.topics["{topic-name}"]`.
+Then the Terraform identifier will be something like the following: 
+```tf
+module.servicebus.azurerm_servicebus_topic.topics["{topic-name}"].
+```
 
 To make Terraform and PowerShell play nicely together in the import script, you have to write the above this way:
 
