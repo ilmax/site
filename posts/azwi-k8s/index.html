@@ -137,7 +137,7 @@ In order to do that we just need to specify the <strong>serviceAccountName</stro
 </span></span></span><span style=display:flex><span><span style=color:#75715e>
 </span></span></span><span style=display:flex><span><span style=color:#75715e>## Role assignment to the application
 </span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>resource</span> <span style=color:#e6db74>&#34;azurerm_role_assignment&#34; &#34;app_storage_contributor&#34;</span> {
-</span></span><span style=display:flex><span>  scope                <span style=color:#f92672>=</span> <span style=color:#66d9ef>data</span>.<span style=color:#66d9ef>azurerm_storage_account</span>.<span style=color:#66d9ef>app</span>.<span style=color:#66d9ef>id</span>
+</span></span><span style=display:flex><span>  scope                <span style=color:#f92672>=</span> <span style=color:#66d9ef>data</span>.<span style=color:#66d9ef>azurerm_storage_account</span>.<span style=color:#66d9ef>storage</span>.<span style=color:#66d9ef>id</span>
 </span></span><span style=display:flex><span>  role_definition_name <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;Storage Blob Data Contributor&#34;</span>
 </span></span><span style=display:flex><span>  principal_id         <span style=color:#f92672>=</span> <span style=color:#66d9ef>azuread_service_principal</span>.<span style=color:#66d9ef>app</span>.<span style=color:#66d9ef>id</span>
 </span></span><span style=display:flex><span>}
