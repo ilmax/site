@@ -2,7 +2,7 @@
 title: "Connect from GitHub to Azure without secrets"
 date: 2023-01-19T16:39:35+01:00
 draft: true
-tags: ["github", "azure", "devops"]
+tags: ["github", "azure", "devops", "terraform"]
 ---
 
 OpenID Connect (OIDC) allows your GitHub Actions workflows to access resources in Azure, without needing to store the Azure credentials as long-lived GitHub secrets.
@@ -65,6 +65,81 @@ If you have to configure multiple repositories, the manual approach falls short 
 Since Terraform has a provider-based approach, we can configure a GitHub repository (or many) and at the same time create the required setup in Azure Active Directory, let's see how is done:
 
 ```tf
+// Look-up GitHub Actions token issuer discover document
+data "http" "github_actions_oidc_discovery_document" {
+  url = "https://token.actions.githubusercontent.com/.well-known/openid-configuration"
+
+  request_headers = {
+    Accept = "application/json"
+  }
+
+  lifecycle {
+    postcondition {
+      condition     = contains([200], self.status_code)
+      error_message = "Status code invalid"
+    }
+  }
+}
+
+locals {
+  github_issuer = jsondecode(data.http.github_actions_oidc_discovery_document.response_body)["issuer"]
+}
+
+// Create an Azure AD Application for the GitHub Actions Service Principal
+resource "azuread_application" "github_app_registration" {
+  display_name = "GitHub-App-Registration"
+}
+
+// Create a Service Principal for the GitHub Actions App Registration
+resource "azuread_service_principal" "github_service_principal" {
+  application_id = azuread_application.github_app_registration.application_id
+  use_existing   = true
+}
+
+// Create the Federated Credential for the App Registration
+resource "azuread_application_federated_identity_credential" "github_federated_credentials" {
+  application_object_id = azuread_application.github_app_registration.object_id
+  audiences             = ["api://AzureADTokenExchange"]
+  display_name          = "GitHub-FederatedCredential"
+  issuer                = local.github_issuer
+  subject               = "repository_owner:${var.organization}:environment:${var.environment}"
+}
+
+// Look-up current subscription and tenant id
+data "azurerm_client_config" "current" {}
+
+// Create the repository and the environment
+resource "github_repository" "repository" {
+  name        = var.repository_name
+  description = var.repository_description
+}
+
+resource "github_repository_environment" "environment" {
+  environment  = var.environemnt
+  repository   = github_repository.repository.name
+}
+
+// Create the secrets into the environment
+resource "github_actions_environment_secret" "client_id" {
+  environment     = github_repository_environment.environment.environment
+  repository      = github_repository.repository.name
+  secret_name     = "CLIENT_ID"
+  plaintext_value = azuread_application.github_app_registration.application_id
+}
+
+resource "github_actions_environment_secret" "subscription_id" {
+  environment     = github_repository_environment.environment.environment
+  repository      = github_repository.repository.name
+  secret_name     = "SUBSCRIPTION_ID"
+  plaintext_value = data.azurerm_client_config.current.subscription_id
+}
+
+resource "github_actions_environment_secret" "tenant_id" {
+  environment     = github_repository_environment.environment.environment
+  repository      = github_repository.repository.name
+  secret_name     = "TENANT_ID"
+  plaintext_value = data.azurerm_client_config.current.tenant_id
+}
 
 ```
 
