@@ -102,7 +102,7 @@ resource "azuread_application_federated_identity_credential" "github_federated_c
   audiences             = ["api://AzureADTokenExchange"]
   display_name          = "GitHub-FederatedCredential"
   issuer                = local.github_issuer
-  subject               = "repository_owner:${var.organization}:environment:${var.environment}"
+  subject               = "repo:${var.organization}/${var.repository_name}:environment:${var.environemnt}"
 }
 
 // Look-up current subscription and tenant id
@@ -143,6 +143,8 @@ resource "github_actions_environment_secret" "tenant_id" {
 
 ```
 
+> Please note that this Terraform configuration requires multiple providers and, to run the apply successfully, you need to be authenticated into both.
+
 ## Quirks
 As you can see, the configuration is quite straightforward, but there's a catch.
 Since you have to configure the subject (sub) claim in the Federated Credential with the same value of the sub claim that GitHub is issuing to your workflow and by default the repository name will be part of the claim value, this means you will have to create one App Registration, Federated Credential and Service Principal for each repository.
@@ -163,7 +165,16 @@ Here below you can see how to configure the subject claim for our use case:
 
 ```
 
-There're more customization possible and you can learn about these in the GitHub [documentation](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect#customizing-the-token-claims).
+There're more customizations possible and you can learn about these in the GitHub [documentation](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect#customizing-the-token-claims).
+
+The last change you need to implement is to configure the workflow the proper way, there are two parts to it:
+1. Configure the required permissions in the workflow
+2. Configure the action `azure/login@v1 to use the token exchange.
+
+Here's an example of a workflow that will work with the configuration above:
+
+```yml
+```
 
 I hope you found this useful. 
 Till the next time
