@@ -223,7 +223,7 @@ data "azurerm_storage_account" "storage" {
 
 ## Role assignment to the application
 resource "azurerm_role_assignment" "app_storage_contributor" {
-  scope                = data.azurerm_storage_account.app.id
+  scope                = data.azurerm_storage_account.storage.id
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = azuread_service_principal.app.id
 }

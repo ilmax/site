@@ -8,6 +8,8 @@ on:
 
 jobs:
   deploy:
+    env:
+      HUGO_ENV: production
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
@@ -28,5 +30,10 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         if: github.ref == 'refs/heads/main'
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          personal_token: ${{ secrets.PAT }}
+          external_repository: ilmax/ilmax.github.io
           publish_dir: ./public
+          user_name: 'github-actions'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          full_commit_message: ${{ github.event.head_commit.message }}
+          publish_branch: main

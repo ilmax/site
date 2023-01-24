@@ -1,9 +1,10 @@
-baseURL: 'https://ilmax.github.io/site'
+baseURL: 'https://maxdon.tech'
 languageCode: en-us
 title: Massimiliano's Tech Chronicles
 theme: m10c
 enableRobotsTXT: true
 paginate: 8
+googleAnalytics: G-QK96EXLDNF
 menu:
   main:
     - name: Home
@@ -36,11 +37,12 @@ params:
     icon: solid
     buttonMargin: 0.2em
   giscus:
-    repo: ilmax/site
-    repoID: R_kgDOIvGqCw
-    category: Post Comments
-    categoryID: DIC_kwDOIvGqC84CTeD0
+    repo: ilmax/ilmax.github.io
+    repoID: R_kgDOI1C2VQ
+    category: Comments
+    categoryID: DIC_kwDOI1C2Vc4CTw93
     mapping: pathname
+    strict: 1
     reactionsEnabled: '1'
     emitMetadata: '0'
     inputPosition: bottom
