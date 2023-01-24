@@ -1,5 +1,5 @@
 ---
-title: "Connect from GitHub to Azure without secrets"
+title: "Seamless Integration: Connect Your GitHub Actions to Azure Without Using Secrets With Terraform"
 date: 2023-01-19T16:39:35+01:00
 draft: true
 tags: ["github", "azure", "devops", "terraform"]
@@ -24,10 +24,12 @@ Usually, to connect to Azure as an application (i.e. when running a GitHub Actio
 > Please note that the `az ad sp create-for-rbac` can simplify the process a bit since it can do steps from 1 to 3 in a single go, more infor [here](https://learn.microsoft.com/en-us/cli/azure/ad/sp?view=azure-cli-latest#az-ad-sp-create-for-rbac)
 
 ## Why should you use secret-less connections
-It's quite obvious that having secrets-less connections is far better than using some form of a shared secret.
+Having secret-less connections is far better than using some form of a shared secret.
 Since you don't have any secrets, you can't leak any moreover shared secrets usually comes with a fixed validity. Ideally, you should rotate them often to limit the risk derived from a secret leak.
 
-One additional reason is that, in the case of infrastructure deployments, the Service Principal will have high privileges on your subscription(s) since it has to create resources, potentially assign RBAC role assignments (that require the Owner role) and so on.
+One additional reason in the case of automated infrastructure deployments is that the Service Principal will have high privileges on your subscription(s) and/or possibly Azure Active Directory since it has to create resources, potentially assign RBAC role assignments (that require the Owner role) making the event of a secret leak even more dangerous.
+
+With secret-less connections, even if the GitHub Actions secrets get leaked, an attacker can't gain access to the Azure subscription.
 
 > Please note that even if you store the shared secret in to GitHub secrets, it's still possible to get access to it
 
@@ -51,7 +53,11 @@ For the token exchange to be successful, you need to configure the federated cre
 - The subject (sub claim of the access token issued by GitHub)
 - The audience (fixed value of `api://AzureADTokenExchange`)
 
-If you want to read more, here's the relative [documentation](https://learn.microsoft.com/en-us/azure/active-directory/develop/workload-identity-federation).
+Here below you can find how GitHub explains it in their announcement post.
+![OIDC Federation](https://github.blog/wp-content/uploads/2021/11/OIDC-diagram.png?resize=1024%2C355?w=1024 "OIDC Federation")
+
+
+If you want to dig deeper, here's the [documentation](https://learn.microsoft.com/en-us/azure/active-directory/develop/workload-identity-federation).
 
 ## Manual configuration
 If you go to Azure Active Directory, after you created an App Registration, when you try to add federated credentials, the Azure Ad Portal helps you with filling in the required details for setting up GitHub federated credentials.
@@ -102,6 +108,7 @@ resource "azuread_application_federated_identity_credential" "github_federated_c
   audiences             = ["api://AzureADTokenExchange"]
   display_name          = "GitHub-FederatedCredential"
   issuer                = local.github_issuer
+  // You need to decide how to configure this one accordingly to your use case
   subject               = "repo:${var.organization}/${var.repository_name}:environment:${var.environemnt}"
 }
 
@@ -119,7 +126,7 @@ resource "github_repository_environment" "environment" {
   repository   = github_repository.repository.name
 }
 
-// Create the secrets into the environment
+// Create the secrets into the environment (optional)
 resource "github_actions_environment_secret" "client_id" {
   environment     = github_repository_environment.environment.environment
   repository      = github_repository.repository.name
@@ -127,6 +134,7 @@ resource "github_actions_environment_secret" "client_id" {
   plaintext_value = azuread_application.github_app_registration.application_id
 }
 
+// Can be just regular repository secret if you don't use environments
 resource "github_actions_environment_secret" "subscription_id" {
   environment     = github_repository_environment.environment.environment
   repository      = github_repository.repository.name
@@ -134,6 +142,7 @@ resource "github_actions_environment_secret" "subscription_id" {
   plaintext_value = data.azurerm_client_config.current.subscription_id
 }
 
+// Can be just regular repository secret if you don't use environments
 resource "github_actions_environment_secret" "tenant_id" {
   environment     = github_repository_environment.environment.environment
   repository      = github_repository.repository.name
@@ -162,8 +171,30 @@ To achieve what I described above, I need a way to change the content of the sub
 Here below you can see how to configure the subject claim for our use case:
 
 ```tf
+resource "github_actions_repository_oidc_subject_claim_customization_template" "sub_claim_template" {
+  repository = github_repository.repository.name
 
+  use_default = false
+  include_claim_keys = [
+    "repository_owner",
+    "context",
+  ]
+
+  count = var.has_deployments ? 1 : 0
+}
+
+// Create the Federated Credential for the App Registration
+resource "azuread_application_federated_identity_credential" "github_federated_credentials" {
+  application_object_id = azuread_application.github_app_registration.object_id
+  audiences             = ["api://AzureADTokenExchange"]
+  display_name          = "GitHub-FederatedCredential"
+  issuer                = local.github_issuer
+  // You need to decide how to configure this one accordingly to your use case
+  subject               = "TODO"
+}
 ```
+
+>Please note that what you incude in the `include_claim_keys` depends on your specific scenario, this configuration allows me to add the **organization** and the **environment** in the subject claim so I can reuse the same Service Principal across all repositories for a given environment.
 
 There're more customizations possible and you can learn about these in the GitHub [documentation](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect#customizing-the-token-claims).
 
@@ -174,8 +205,30 @@ The last change you need to implement is to configure the workflow the proper wa
 Here's an example of a workflow that will work with the configuration above:
 
 ```yml
+name: Azure Login with OIDC
+on: [push]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs: 
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Az CLI login'
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  
+      - name: 'Run az commands'
+        run: |
+          az account show
+          az group list
 ```
 
-I hope you found this useful. 
-Till the next time
+I hope you found this useful.
 
+Till the next time
