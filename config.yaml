@@ -17,7 +17,7 @@ menu:
       url: /tags/
       weight: 3
 params:
-  favicon: /site/favicon.ico
+  favicon: /favicon.ico
   author: Massimiliano Donini
   description: My adventures in Tech
   menu_item_separator: ' | '
