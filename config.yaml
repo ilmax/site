@@ -21,6 +21,7 @@ params:
   author: Massimiliano Donini
   description: My adventures in Tech
   menu_item_separator: ' | '
+  showCodeCopyButtons: true
   style:
     darkestColor: '#242930'
     darkColor: '#353b43'
