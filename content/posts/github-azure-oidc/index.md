@@ -1,7 +1,7 @@
 ---
 title: "Goodbye secrets 👋, Hello token exchange: Connect Your GitHub Actions to Azure securely"
 date: 2023-01-19T16:39:35+01:00
-draft: true
+draft: false
 tags: ["github", "azure", "devops", "terraform"]
 ---
 
