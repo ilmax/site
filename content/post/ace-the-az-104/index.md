@@ -5,24 +5,24 @@ draft: true
 tags: ["azure", "certifications"]
 ---
 
-I recently passed the [AZ-104](https://learn.microsoft.com/en-us/certifications/azure-administrator/) certification, making it the third Microsoft certification under my belt. I started with [AZ-900](https://learn.microsoft.com/en-us/certifications/azure-fundamentals/), then [AZ-204](https://learn.microsoft.com/en-us/certifications/azure-developer/) and recently [AZ-104](https://learn.microsoft.com/en-us/certifications/azure-administrator/).
+I recently passed the [AZ-104](https://learn.microsoft.com/en-us/certifications/azure-administrator/) certification exam, making it the third Microsoft certification under my belt so far. I started with [AZ-900](https://learn.microsoft.com/en-us/certifications/azure-fundamentals/), then [AZ-204](https://learn.microsoft.com/en-us/certifications/azure-developer/) and recently [AZ-104](https://learn.microsoft.com/en-us/certifications/azure-administrator/).
 I'm planning to get the [AZ-305](https://learn.microsoft.com/en-us/certifications/azure-solutions-architect/) and eventually the [AZ-400](https://learn.microsoft.com/en-us/certifications/devops-engineer/) soon™.
 
 To get the certification you need to come up with an effective plan. Here below you can find the tips I use to get prepared to undergo a certification exam.
 
-I'm using Azure daily so I was familiar with many of the certifications objectives, but not all of them. Having a developer background, I never configured Azure Active Directory for MFA, conditional access policies or Site-to-Site VPN connections for example.
+I'm using Azure daily so I am familiar with many of the certifications objectives, but not all of them. Having a developer background, I never configured Azure Active Directory for MFA, conditional access policies or Site-to-Site VPN connections for example.
 
 I'm writing this article to explain how I prepared together with some tips I used, but remember that the preparation should be tailored to the way you learn. Different people learn in different ways and to be successful you need to figure out what works best for you.
 
-## Study plan
-I'm a full-time employee and I work 40 hours per week, so finding the time to study is not always easy, luckily for me though, here in The Netherlands the winter is quite depressing: It's dark when I leave home for the office and it's dark when I come back. This somehow helps me stay at home during the evening so I could dedicate some time to study and preparing for the certification.
+## My study agenda
+I'm a full-time employee and I work 40 hours per week, so finding the time to study was not always easy, luckily for me though, here in The Netherlands the winter is quite depressing: It's dark when I leave home for the office and it's dark when I come back. This somehow helped me stay at home during the evening so I could dedicate some time to study and prepare for the certification.
 
 My approach was studying around 1.5/2 hours every day and putting in 4 or 5 hours during the weekends. It took me around 1.5 months to prepare for the certification.
 
-So my study plan was to put in around 15 hours per week. I wasn't studying every day to not get overwhelmed, so I kept some days off to relax and blow some steam off.
+My objective was to put in around 15 hours per week. I wasn't studying every day to not get overwhelmed, so I took some free days to relax and blow some steam off.
 
 ## Resources
-Here's a list of resources I used to get prepared:
+Here's a list of materials that I used to get prepared, in no particular order:
 
 ### [AZ-104 Study guide](https://learn.microsoft.com/en-us/certifications/resources/study-guides/az-104)
 The Study guide is a great resource to check how familiar you're with a specific subject. From the study guide, I flagged the areas I was least familiar with and I started focusing on these first.
@@ -43,7 +43,7 @@ There're plenty of practice tests out there, some better than others so you have
 
 >Make sure you're not using dumps because it can invalidate all your certifications and prohibit you to take new ones ever again.
 
-Microsoft sponsors the [MeasureUp](https://www.mindhub.com/az-104-microsoft-azure-administrator-microsoft-official-practice-test/p/MU-AZ-104?utm_source=microsoft&utm_medium=certpage&utm_campaign=msofficialpractice) one, if you wanna a safe bet, go with this.
+Microsoft sponsors the [MeasureUp](https://www.mindhub.com/az-104-microsoft-azure-administrator-microsoft-official-practice-test/p/MU-AZ-104?utm_source=microsoft&utm_medium=certpage&utm_campaign=msofficialpractice) one, so that will set you up for success.
 
 ## Tips
 Here's a collection of tips that helped me get the certification.
