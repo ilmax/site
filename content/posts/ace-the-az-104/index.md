@@ -30,7 +30,7 @@ Here's a list of materials that I used to get prepared, in no particular order:
 The Study guide is a great resource to check how familiar you are with a specific subject. From the study guide, I flagged the areas I was least familiar with and I started focusing on these first.
 
 ### [John Savill's AZ-104 Study cram](https://www.youtube.com/watch?v=VOod_VNgdJk)
-This study cram was super useful to understand concepts I wasn't familiar with because John can explain concepts in a very easy-to-understand way. I used this one to kickstart my knowledge of Azure Active Directory configuration, VPN connections and to better understand how networking works in Azure.
+This study cram was super useful to understand concepts I wasn't familiar with because John can explain concepts in a very easy-to-understand way. I used this one to kick-start my knowledge of Azure Active Directory configuration, VPN connections and to better understand how networking works in Azure.
 
 ### [Microsoft Learn](https://learn.microsoft.com/en-us/training/browse/?terms=104)
 Contrary to many, I didn't complete the AZ-104 learning path. I found the study path too high level and not very useful, what I did instead was to use the study path to dive deeper using the resources usually listed at the end of every chapter.
@@ -41,7 +41,7 @@ In my opinion the learning path **does not prepare** you enough for the exam. Te
 Activating a trial subscription allowed me to have hands-on experience with all the areas I wasn't very familiar with e.g. Azure Active Directory. An Azure trial subscription is free, you have 170.00 € of budget that will last for 30 days. Even though you have to give your credit card details you won't be billed. If you ran out of credits, all the services will be decommissioned unless you  upgrade to a **Pay-As-You-Go** subscription as described in the [Azure free account FAQ](https://azure.microsoft.com/en-gb/free/free-account-faq/).
 
 ### Find a practice test
-There're plenty of practice tests out there, some better than others so you have to put in some research to find a good one, and then go for it. Price vary from aroun 20.00 € up to around 100.00 € but I think it's worth the money.
+There're plenty of practice tests out there, some better than others so you have to put in some research to find a good one, and then go for it. Price vary from around 20.00 € up to around 100.00 € but I think it's worth the money.
 
 >Make sure you're not using dumps because it can invalidate all your certifications and prohibit you to take new ones ever again.
 
@@ -77,14 +77,14 @@ The added value of a certification in my opinion is not the certification badge,
 
 ## The exam
 The exam I went through had 49 questions and I had 1 h and 40 minutes to complete it. The exam started with a case study comprised of 6 questions.
-I found the level of difficulty of the exam resonable, all the questions were clear and easy to understand. The time for me was enough, but if you find yourself running out of time you can skip the question you're not sure of using the **mark for review** functionality, so you can go through them at the end, avoiding the risk of running out of time.
+I found the level of difficulty of the exam reasonable, all the questions were clear and easy to understand. The time for me was enough, but if you find yourself running out of time you can skip the question you're not sure of using the **mark for review** functionality, so you can go through them at the end, avoiding the risk of running out of time.
 
 >Please note that you can't review questions from the case study at the end of the exam, you can review them at only at the end of the case study.
 
 ## Summary
 In this article I wanted to share my approach to prepare for a certification exam together with some tricks I used to get ready in a reasonable amount of time and how to figure out what are the knowledge gaps I had.
 
-To sum up, I wanna point out that this is what worked well for me. It's not guaranteed that this approach works equally well for you, but you may use some of the approaches I described to get yourself ready for the cartification.
+To sum up, I wanna point out that this is what worked well for me. It's not guaranteed that this approach works equally well for you, but you may use some of the approaches I described to get yourself ready for the certification.
 
 I hope you find this helpful, if you have any questions/suggestions don't hesitate to leave a comment below. If you're preparing for AZ-104 or any other certification, I wish you best of luck 🍀.
 
