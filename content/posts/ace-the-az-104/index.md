@@ -4,7 +4,7 @@ date: 2023-01-29T12:51:07+01:00
 draft: false
 tags: ["azure", "certifications"]
 images: 
-- post-cover.png
+- posts/ace-the-az-104/post-cover.jpg
 ---
 
 I recently passed the [AZ-104](https://learn.microsoft.com/en-us/certifications/azure-administrator/) certification exam, making it the third Microsoft certification under my belt so far. I started with [AZ-900](https://learn.microsoft.com/en-us/certifications/azure-fundamentals/), then [AZ-204](https://learn.microsoft.com/en-us/certifications/azure-developer/) and recently [AZ-104](https://learn.microsoft.com/en-us/certifications/azure-administrator/).
