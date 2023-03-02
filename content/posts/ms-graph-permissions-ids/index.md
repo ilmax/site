@@ -1,7 +1,7 @@
 ---
 title: "Microsoft Graph Permissions Well-Known Ids"
 date: 2023-02-09T17:51:31+01:00
-draft: true
+draft: false
 tags: ["azure", "ms-graph"]
 ---
 
