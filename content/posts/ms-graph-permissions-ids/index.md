@@ -8,14 +8,14 @@ tags: ["azure", "ms-graph"]
 {{< toc >}}
 
 If you're working with the Microsoft identity platform, you're probably familiar with the concept of application **Scopes** or **Roles**.
-Scopes or Roles are used to either expose a permission in you application or to grant a permission (defined in another application) to it, e.g. grant Microsoft Graph permissions to read the user profile.
+Scopes or Roles are used to either expose a permission in your application or to grant a permission (defined in another application) to it, e.g. grant Microsoft Graph permissions to read the user profile.
 
-When you're [granting permissions](https://learn.microsoft.com/en-us/graph/permissions-overview?tabs=http) to an application, you need to understand if you want to grant a delegated (scope) permission or an app-only (role) one.
-If this part is confusing to you, I've found this [page](https://learn.microsoft.com/en-us/graph/auth/auth-concepts#access-scenarios) quite useful, especially the following paragraph
+When you're [granting permissions](https://learn.microsoft.com/en-us/graph/permissions-overview?tabs=http) to an application, you need to understand what type of permission to grant: it can be a delegated (scope) permission or an app-only (role) one.
+If this part is confusing to you, I've found this [page](https://learn.microsoft.com/en-us/graph/auth/auth-concepts#access-scenarios) quite useful, especially the following paragraph:
 
 > Delegated permissions, also called scopes, allow the application to act on behalf of the signed-in user. Application permissions, also called app roles, allow the app to access data on its own, without a signed-in user.
 
-On top of understanding the differences between scope and roles, if you want to grant Microsoft Graph permissions, you also need to know the ID of the permission that you want to grant to your application e.g. You want to grant **GroupMember.Read.All** to your application so you can fetch the members of a given group.
+On top of understanding the differences between scope and roles, you also need to know the ID of the permission that you are interested in e.g. You want to grant **GroupMember.Read.All** to your application so you can fetch the members of a given group.
 
 The issue I found working with these IDS is that I'm not able to find a comprehensive list of those, alongside their name and description so I decided to list them in this blog post, mostly to simplify my life when working with it.
 
@@ -34,7 +34,7 @@ The snippet above displays all the roles and scope defined for the Microsoft Gra
 ## Well-known scopes
 Here below you can find the list of all the well-known scopes defined by Microsoft Graph
 
-| **Id**                               | **Description**                                                                                                                                                                                                                                                                                                                                                                                    | **Type** | **Value**                                               |
+| **Description**                               | **Id**                                                                                                                                                                                                                                                                                                                                                                                    | **Type** | **Value**                                               |
 |:------------------------------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:--------:|:-------------------------------------------------------:|
 | Allows the app to read access reviews, reviewers, decisions and settings that the signed-in user has access to in the organization. | ebfcd32b-babb-40f4-a14b-42706e83bd28 | Admin | AccessReview.Read.All |
 | Allows the app to read, update, delete and perform actions on access reviews, reviewers, decisions and settings that the signed-in user has access to in the organization. | e4aa47b9-9a69-4109-82ed-36ec70d85ff1 | Admin | AccessReview.ReadWrite.All |
