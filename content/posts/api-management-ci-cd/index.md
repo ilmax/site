@@ -2,28 +2,34 @@
 title: "Azure API Management CI/CD"
 date: 2024-02-06T15:08:55Z
 draft: true
-tags: ["azure", "apim", "devops"]
+tags: ["azure", "apim", "devops", "github"]
 ---
+## Problem
+If you are in the business of building http APIs in Azure chances are that you may be using Azure API Management and an infrastructure similar to the image below.
 
-If you are in the business of building http APIs in Azure chances are that you may be using Azure API Management and an architecture similar to the image below.
+![API Management Infrastructure](api-management.webp "Azure API Management infrastructure")
 
-# ADD Image
+You may complicate the above as you like, putting additional services in front of API Management, add API Management to a VNET and expose it via Private Endpoint, etc, but at the end of the day you have an instance of API Management that talks with one or more backend services that implements the exposed APIs.
 
-You may complicate the above infrastructure as you like, putting additional services in front of API Management, add API Management to a vNET and expose it via Private Endpoint, etc, but at the end of the day you have an instance of API Management that talks with one or more services that implements your API.
+Adding Azure API Management in front of your services make the deployment phase of the service a tiny bit more complicated since, not only you need to deploy the new service, possibly preventing downtime and making sure you don't break any existing client(s), you also need to reflect your changes to the Azure API Management api, otherwise your changes may not be exposed at all. 
+For example let's say that you expose a brand new endpoint in your service but such new endpoint is not part of the API Management API, a client will still get a 404 when trying to invoke such endpoint (Unless you forward everything from API Management to the backend using a catch-all route).
 
-Adding Azure API Management in front of your services adds another little complication to the deployment phase of the service since, not only you need to deploy the new service, possibly preventing downtime and making sure you don't break any existing client, you also need to reflect your changes to the Azure API Management api, otherwise your changes may not be exposed at all. For example if you expose a brand new endpoint in your service but such endpoint is not part of the API Management api, a client will still get a 404 when trying to invoke the endpoint.
+When faced with this problem, I went on the Microsoft Learn [documentation](https://learn.microsoft.com/en-us/azure/api-management/devops-api-development-templates) to look-up the suggested practices to adopt DevOps principles for the management of APIs. 
 
-When looking at the problem, I went on the Microsoft Learn [documentation](https://learn.microsoft.com/en-us/azure/api-management/devops-api-development-templates) to look-up the suggested practices to adopt DevOps principles for the management of APIs. 
+All the proposed approaches available in the Microsoft Learn documentation requires you to manage the API definition using one of the following ways: 
+- ARM Templates
+- Terraform resources
+- ClickOps + extractor tool 
 
-All the proposed approaches available in the Microsoft Learn documentation requires you to manage the API definition (ARM Templates, Terraform resources, ClickOps + extractor tool) and that's an additional step that you may not be willing to take for a variety of different reasons.
-
-If that's the case, keep on reading since I may have something for you.
+That's an additional step that you may not be willing to take for a variety of different reasons. I didn't want the burden of managing API definition in git repositories, I jsut needed to update the API to reflect what the underlying service OpenApi documents definition after every service deployment.
 
 ## Simple CI/CD for API Management
-I didn't want the burden of managing API definition in git repositories, I jsut needed to update the API to reflect what the underlying service implements.
-The solution I was looking for needed to be **simple**, requiring the lowest possible amount of configuration, no special requirements for authentication and be a command line tool so I could easily integrate it in a GitHub Action workflow.
+The solution I was looking for had to satisfy some requirements:
+- It had to be **simple**. I valued simplicity above flexibitily
+- It shouldn't had any special requirements for authentication (No need to create a service principal)
+- It had to be a command line tool so it could be easily integrate it in a GitHub Action workflow.
 
-The GitHub Action workflow should be something as simple as:
+The deployment workflow that I was envisioning was a simple as:
 1) Download artifacts created by the CI workflow/Build the artifacts that needs to be deployed
 2) Login to Azure
 3) Deploy the artifacts to whicever service I'm using to host the service (App Service/Azure Container Apps/Azure Functions/Azure Kubernetes Service)
@@ -32,14 +38,18 @@ The GitHub Action workflow should be something as simple as:
 After some research that yielded no match, I decided to give it a go an build a tool myself.
 
 ## Enter Yaat
-As the joke goes by, cache invalidation and naming are the only two difficult things in IT, the name I choose prove this (I'm not happy about it, but that was the best I could come up with back then)
+As the famous sentence goes by, 
+
+*"There are only two hard things in Computer Science: cache invalidation and naming things. -- Phil Karlton"*,
+
+the name I choose prove this (I'm not happy about it, but that was the best I could come up with back then)
 Yaat stands for...yes, you guessed it: Yeat another APIM tool
 Yaat is a dotnet global tool, it's open source, it's repository can be found [here](https://github.com/ilmax/MaxDon.ApimUpdater) and it's available on nuget. You can install it via the following command:
 ```bash
 dotnet tool install MaxDon.ApimUpdater -g
 ```
 
-Here's and example on how to use it in a GitHub action:
+Here's and example on how it can be used in a GitHub action:
 ```yml
   - name: Az CLI login
     uses: azure/login@v1
