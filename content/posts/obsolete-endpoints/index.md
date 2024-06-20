@@ -1,5 +1,5 @@
 ---
-title: "Mastering Endpoint Evolution: Safely Retiring Obsolete APIs with ASP.NET Core, OpenTelemetry, and Aspire"
+title: "Telemetry-Driven API Evolution: Removing Obsolete Endpoints in ASP.NET Core"
 date: 2024-06-20T10:16:10+02:00
 draft: true
 tags: ["dotnet", "otel", "aspire"]
