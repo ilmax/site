@@ -14,7 +14,7 @@ As we all know, APIs tend to evolve and managing API versioning is a tricky busi
 
 In ASP.NET Core we can add attributes to our endpoints to mark them obsolete, you can roll your own or, preferably, use the built-in `[ObsoleteAttribute]` that will render the obsolete endpoints nicely as shown below
 
-![Swagger UI obsolete endpoints](images/swagger-ui-obsolete-endpoints.png "Swagger UI obsolete endpoints")
+![Swagger UI obsolete endpoints](images/swagger-ui-obsolete-endpoints-min.png "Swagger UI obsolete endpoints")
 
 > Please note that if you use `WithOpenApi()` on a minimal api, it doesn't show the endpoint as obsolete in the UI, refer to the [documentation](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/openapi?view=aspnetcore-8.0) to correctly setup OpenApi in minimal api
 
@@ -48,7 +48,7 @@ app.MapGet("/weatherforecast", [Obsolete]() => WeatherGenerator.Generate())
 Now that we marked the endpoints as obsolete, we need to emit custom telemetry every time our endpoints. In the MVC world (i.e. when we build our API using controllers) we can implement a filter.
 [Filters](https://learn.microsoft.com/en-us/aspnet/core/mvc/controllers/filters?view=aspnetcore-8.0) in MVC are a very powerful way of executing custom code in various stages of the HTTP request pipeline.
 
-![MVC Filters](images/mvc-filters.png "MVC Filters")
+![MVC Filters](images/mvc-filters-min.png "MVC Filters")
 
 *Image courtesy of [https://learn.microsoft.com/en-us/aspnet/core/mvc/controllers/filters?view=aspnetcore-8.0](https://learn.microsoft.com/en-us/aspnet/core/mvc/controllers/filters?view=aspnetcore-8.0)*
 
@@ -189,7 +189,7 @@ there are some clever tricks you can do to register a filter globally, [Khalid A
 ## Visualize the telemetry in the Aspire Dashboard
 
 Our custom metrics telemetry gets exported to the Aspire Dashboard via the OLTP protocol and then shown as follows:
-![Obsolete metrics](images/metrics.png "Obsolete metrics")
+![Obsolete metrics](images/metrics-min.png "Obsolete metrics")
 
 As you can see I'm not adding many additional tags here, I'm just adding the display name that ASP.NET Core computes for the action/endpoint. This should be enough information to identify the called endpoint, but maybe you need some more information about the caller, to accomplish this I decided to also emit a custom span that I then enrich with the `ActionExecutingContext`/`EndpointFilterInvocationContext` with the following code:
 
@@ -214,7 +214,7 @@ This allows you to add all additional information your analysis will require.
 >Please make sure that's quite easy to discose sensitive data in your APM of choice so beware of what tags you're adding to the span.
 
 This is how the span will show in Aspire:
-![Obsolete trace](images/traces.png "Obsolete trace")
+![Obsolete trace](images/traces-min.png "Obsolete trace")
 
 Aspire, as of now (June 2024) is mostly a development time tool that allows you to quickly coordinate and run a distributed application.
 
