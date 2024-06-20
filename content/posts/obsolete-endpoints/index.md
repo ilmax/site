@@ -184,11 +184,11 @@ app.MapGet("/weatherforecast", [Obsolete]() => WeatherGenerator.Generate())
     .WithTags("MinimalApi");
 ```
 
-Actually, there are some clever tricks you can do to register a filter globally, [Khalid Abuhakmeh](https://github.com/khalidabuhakmeh) has written a nice post about it, you if you're interested you can find more [here](https://khalidabuhakmeh.com/global-endpoint-filters-with-aspnet-core-minimal-apis)
+there are some clever tricks you can do to register a filter globally, [Khalid Abuhakmeh](https://github.com/khalidabuhakmeh) has written a nice post about it, you if you're interested you can find more [here](https://khalidabuhakmeh.com/global-endpoint-filters-with-aspnet-core-minimal-apis)
 
-## Visualize the telemetry in Aspire
+## Visualize the telemetry in the Aspire Dashboard
 
-The metrics telemetry gets collected in Aspire and shown as follows:
+Our custom metrics telemetry gets exported to the Aspire Dashboard via the OLTP protocol and then shown as follows:
 ![Obsolete metrics](images/metrics.png "Obsolete metrics")
 
 As you can see I'm not adding many additional tags here, I'm just adding the display name that ASP.NET Core computes for the action/endpoint. This should be enough information to identify the called endpoint, but maybe you need some more information about the caller, to accomplish this I decided to also emit a custom span that I then enrich with the `ActionExecutingContext`/`EndpointFilterInvocationContext` with the following code:
@@ -216,6 +216,12 @@ This allows you to add all additional information your analysis will require.
 This is how the span will show in Aspire:
 ![Obsolete trace](images/traces.png "Obsolete trace")
 
+Aspire, as of now (June 2024) is mostly a development time tool that allows you to quickly coordinate and run a distributed application.
+
+The Aspire Dashboard is a standalone service that *can* potentially be deployed in production but, as of now, it only provides in-memory storage of telemetry and there's no option to plug in a persistent storage mechanism.
+
+In the production environment, you should probably rely on an industry-standard like [Prometheus](https://prometheus.io/) & [Grafana](https://grafana.com/) to collect and visualize your metrics.
+
 ## References
 
 - [https://www.youtube.com/watch?v=WzZI_IT6gYo&ab_channel=NDCConferences](https://www.youtube.com/watch?v=WzZI_IT6gYo&ab_channel=NDCConferences)
@@ -225,4 +231,6 @@ This is how the span will show in Aspire:
 
 ## Conclusions
 
-I hope you found this post useful, till the next time
+In this post, we went through several steps, from implementing controller/endpoint filters to emitting custom telemetry, we looked at how the telemetry will be visualized in the Aspire Dashboard. Those custom telemetry will allow us to inspect which and how often our deprecated API are being used which in turn allows us to make an informed decision and minimize the risk of involuntarily breaking clients.
+
+I hope you found this article helpful, that's all for today till the next time!
