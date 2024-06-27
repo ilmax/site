@@ -5,22 +5,26 @@ draft: true
 tags: ["dotnet", "otel", "aspire"]
 ---
 
-It's common to evolve HTTP APIs, and it's very easy to expose new and improved versions of a given functionality, not so to safely retire and eventually remove the deprecated versions.
+{{< toc >}}
+
+It's common to evolve HTTP APIs, and while it's very easy to expose new and improved versions of a given functionality, not so much to safely obsolete and eventually remove an API.
 
 Have you ever deprecated endpoints and wanted to clean them up after some time? Have you ever deleted obsolete endpoints only to discover, after the deployment that some forgotten service was still using those endpoints? Have you ever needed to track the usage of those obsolete endpoints to plot a nice roadmap toward safe deletion?
 
 If those questions resonate with you, please follow along, I will show you how you can use [OpenTelemetry](https://opentelemetry.io/) to track usage metrics and [Aspire](https://learn.microsoft.com/en-us/dotnet/aspire/get-started/aspire-overview) to visualize those metrics.
 As we all know, APIs tend to evolve and managing API versioning is a tricky business. More often than not we need to live with multiple versions of an API just because we are not sure if you can delete the older version of the API and you choose the "better safe than sorry" way of dealing with the problem.
 
-## Obsoleting endpoints
+## Marking obsolete endpoints
 
-In ASP.NET Core we can add attributes to our endpoints to mark them obsolete, you can roll your own or, preferably, use the built-in `[ObsoleteAttribute]` that will mark the endpoint as deprecated and will also reflect in the Swagger UI shown below:
+In ASP.NET Core there's no first-class support for obsoleting endpoints. To do so we can add some metadata to endpoints we want to obsolete and emit some metric every time an endpoint with our newly added metadata executes.
+
+To add metadata to endpoints we use C# attributess. You can implement your custom attribute or, preferably, use the built-in `[ObsoleteAttribute]` that will mark the endpoint as deprecated and will also reflect in the Swagger UI as shown below (*See the grey color and the strikethrough)*:
 
 ![Swagger UI obsolete endpoints](images/swagger-ui-obsolete-endpoints-min.png "Swagger UI obsolete endpoints")
 
-> Please note that if you use `WithOpenApi()` on a minimal api, it doesn't show the endpoint as obsolete in the UI, refer to the [documentation](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/openapi?view=aspnetcore-8.0) to correctly setup OpenApi in minimal api
+> Please note that if you use `WithOpenApi()` on a inimal API, it doesn't show the endpoint as obsolete in the UI, refer to the [documentation](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/openapi?view=aspnetcore-8.0) to correctly setup OpenApi in Minimal API
 
-For controllers, you can add the [Obsolete] attribute to either a specific controller action or the entire controller, as shown below:
+For controllers, you can add the `[Obsolete]` attribute to either a specific controller action or the entire controller, as shown below:
 
 ```csharp
 [Tags("Controller")]
@@ -47,7 +51,7 @@ app.MapGet("/weatherforecast", [Obsolete]() => WeatherGenerator.Generate())
 
 > Minimal API is a simplified approach for building HTTP APIs in ASP.NET Core. For more details, refer to the official [documentation](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview?view=aspnetcore-8.0)
 
-Adding the `[Obsolete]` attribute though, is only adding some metadata to the endpoint that will reflect in the OpenApi definition and the Swagger UI, so we need to manually emit some custom telemetry ourselves, follow along to discover how to do it.
+Adding the `[Obsolete]` attribute though, is only adding some metadata to the endpoint that will reflect in the OpenApi definition and the Swagger UI, so we need to manually emit some custom telemetry ourselves and follow along to discover how to do it.
 
 ## Intercepting endpoint invocations
 
@@ -103,7 +107,7 @@ public class ObsoleteEndpointFilter : IEndpointFilter
 }
 ```
 
-## Emitting custom telemetry
+## Emitting custom telemetry using an ASP.NET Core filter
 
 Now that the skeleton of our filters is done, we have to emit custom telemetry to signal that an obsolete endpoint has been invoked.
 
@@ -173,7 +177,7 @@ public class ObsoleteEndpointFilter : IEndpointFilter
 }
 ```
 
-## Register the filter
+## Registering the filter
 
 Now that we created the filter(s), we need to make sure ASP.NET Core executes our filters during the HTTP Require pipeline, we achieve this by registering the filter(s). MVC and Minimal API have two different ways of registering a filter, in MVC you can do it in several ways, but if you want to apply the filter globally (so that it runs for every HTTP request), you can do the following:
 
@@ -228,7 +232,7 @@ Aspire, as of now (June 2024) is mostly a development time tool that allows you 
 
 The Aspire Dashboard is a standalone service that *can* potentially be deployed in production but, as of now, it only provides in-memory storage of telemetry and there's no option to plug in a persistent storage mechanism.
 
-In the production environment, you should probably rely on an industry-standard like [Prometheus](https://prometheus.io/) & [Grafana](https://grafana.com/) to collect and visualize your metrics.
+In a production environment, you should probably rely on an industry-standard like [Prometheus](https://prometheus.io/) & [Grafana](https://grafana.com/) to collect and visualize your metrics.
 
 ## References
 
