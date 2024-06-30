@@ -1,11 +1,9 @@
 ---
 title: "Telemetry-Driven API Evolution: Removing Obsolete Endpoints in ASP.NET Core"
 date: 2024-06-20T10:16:10+02:00
-draft: true
+draft: false
 tags: ["dotnet", "otel", "aspire"]
 ---
-
-{{< toc >}}
 
 It's common to evolve HTTP APIs, and while it's very easy to expose new and improved versions of a given functionality, not so much to safely obsolete and eventually remove an API.
 
@@ -22,7 +20,9 @@ To add metadata to endpoints we use C# attributess. You can implement your custo
 
 ![Swagger UI obsolete endpoints](images/swagger-ui-obsolete-endpoints-min.png "Swagger UI obsolete endpoints")
 
-> Please note that if you use `WithOpenApi()` on a inimal API, it doesn't show the endpoint as obsolete in the UI, refer to the [documentation](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/openapi?view=aspnetcore-8.0) to correctly setup OpenApi in Minimal API
+{{< alert >}}
+Please note that if you use `WithOpenApi()` on a inimal API, it doesn't show the endpoint as obsolete in the UI, refer to the [documentation](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/openapi?view=aspnetcore-8.0) to correctly setup OpenApi in Minimal API
+{{< /alert >}}
 
 For controllers, you can add the `[Obsolete]` attribute to either a specific controller action or the entire controller, as shown below:
 
@@ -59,9 +59,9 @@ Once endpoints are marked as obsolete, we need to emit custom telemetry every ti
 
 [Filters](https://learn.microsoft.com/en-us/aspnet/core/mvc/controllers/filters?view=aspnetcore-8.0) in MVC are a very powerful way of executing custom code in various stages of the HTTP request pipeline.
 
-![MVC Filters](images/mvc-filters-min.png "MVC Filters")
+{{< figure src="images/mvc-filters-min.png" alt="images/mvc-filters-min.png" nozoom=true default=true class="flex items-center justify-center" >}}
+_Image courtesy of [https://learn.microsoft.com/en-us/aspnet/core/mvc/controllers/filters?view=aspnetcore-8.0](https://learn.microsoft.com/en-us/aspnet/core/mvc/controllers/filters?view=aspnetcore-8.0)_
 
-*Image courtesy of [https://learn.microsoft.com/en-us/aspnet/core/mvc/controllers/filters?view=aspnetcore-8.0](https://learn.microsoft.com/en-us/aspnet/core/mvc/controllers/filters?view=aspnetcore-8.0)*
 
 As you can see from the image above, the best option is to implement an ActionFilter that runs just before and after our controller action. The code is quite straightforward, we check if our action (the method in the controller that implements the HTTP API) has the obsolete attribute and we emit some telemetry as shown below:
 
@@ -112,9 +112,13 @@ public class ObsoleteEndpointFilter : IEndpointFilter
 Now that the skeleton of our filters is done, we have to emit custom telemetry to signal that an obsolete endpoint has been invoked.
 
 OpenTelemetry allows us to emit [metric signals](https://opentelemetry.io/docs/concepts/signals/metrics/), in dotnet to emit custom telemetry we need to create a `Meter` and from it an instrument. In our case, the `Counter<T>` is the most appropriate instrument to record endpoint invocations.
->Showing how to best use OpenTelemetry is outside of the scope of this article, but if you're interested there's a great and very pragmatic [YoutTube video](https://www.youtube.com/watch?v=WzZI_IT6gYo&ab_channel=NDCConferences) on how to do telemetry in dotnet by [Martin Thwaites](https://x.com/MartinDotNet) that can get you up to speed quickly.
 
-Please note that the `Meter` class needs to be a singleton and you should configure OpenTelemetry to listen to the specific meter using the same name to get telemetry emitted. Don't worry if this sounds a bit convoluted now, especially if you're not so familiar with how OpenTelemetry works in dotnet. Martin does an excellent job in getting you up to speed quickly and you can all find all the source code for this article in my GitHub repository [here](https://github.com/ilmax/obsolete-endpoints).
+{{< alert >}}
+Showing how to best use OpenTelemetry is outside of the scope of this article, but if you're interested there's a great and very pragmatic [YoutTube video](https://www.youtube.com/watch?v=WzZI_IT6gYo&ab_channel=NDCConferences) on how to do telemetry in dotnet by [Martin Thwaites](https://x.com/MartinDotNet) that can get you up to speed quickly.
+{{< /alert >}}
+
+Please note that the `Meter` class needs to be a singleton and you should configure OpenTelemetry to listen to the specific meter using the same name to get telemetry emitted. Don't worry if this sounds a bit convoluted now, especially if you're not so familiar with how OpenTelemetry works in dotnet. Martin does an excellent job in getting you up to speed quickly and you can all find all the source code for this article in my GitHub repository
+{{< github repo="ilmax/obsolete-endpoints" >}}
 
 So without further ado, here's the OpentTelementry code:
 
@@ -223,7 +227,10 @@ public static class ActivityExtensions
 ```
 
 This allows you to add all additional information your analysis will require.
->Please make sure that's quite easy to discose sensitive data in your APM of choice so beware of what tags you're adding to the span.
+
+{{< alert >}}
+Please be aware that's quite easy to discose sensitive data in your APM of choice when adding for example the full URI, so beware of what tags you're adding to the span.
+{{< /alert >}}
 
 This is how the span will show in Aspire:
 ![Obsolete trace](images/traces-min.png "Obsolete trace")
