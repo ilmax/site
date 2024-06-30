@@ -1,0 +1,16 @@
+languageCode = "en"
+languageName = "English"
+weight = 1
+title = "Massimiliano's Tech Chronicles"
+
+[params]
+displayName = "EN"
+isoCode = "en"
+rtl = false
+dateFormat = "2 January 2006"
+
+[author]
+name = "Massimiliano Donini"
+image = "avatar.jpg"
+links = [ { github = "https://github.com/ilmax" }, { linkedin = "https://www.linkedin.com/in/massimiliano-donini/" }, { x-twitter = "https://x.com/maxx_don" } ]
+bio = "🔭 I’m currently working as a freelance Cloud Architect in The Netherlands 🇳🇱 I’m looking to collaborate on Azure and the dotnet technology landscape 💬 Ask me about Azure, dotnet, EF Core, ASP.NET Core, terraform, GitHub & CI/CD automation"
