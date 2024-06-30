@@ -5,8 +5,6 @@ draft: false
 tags: ["azure", "ms-graph"]
 ---
 
-{{< toc >}}
-
 If you're working with the Microsoft identity platform, you're probably familiar with the concept of application **Scopes** or **Roles**.
 Scopes or Roles are used to either expose a permission in your application or to grant a permission (defined in another application) to it, e.g. grant Microsoft Graph permissions to read the user profile.
 

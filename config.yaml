@@ -1,7 +1,7 @@
 baseURL: 'https://maxdon.tech'
 languageCode: en-us
 title: Massimiliano's Tech Chronicles
-theme: m10c
+theme: blowfish
 enableRobotsTXT: true
 paginate: 8
 googleAnalytics: G-QK96EXLDNF
