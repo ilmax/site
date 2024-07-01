@@ -9,14 +9,14 @@ It's common to evolve HTTP APIs, and while it's very easy to expose new and impr
 
 Have you ever deprecated endpoints and wanted to clean them up after some time? Have you ever deleted obsolete endpoints only to discover, after the deployment that some forgotten service was still using those endpoints? Have you ever needed to track the usage of those obsolete endpoints to plot a nice roadmap toward safe deletion?
 
-If those questions resonate with you, please follow along, I will show you how you can use [OpenTelemetry](https://opentelemetry.io/) to track usage metrics and [Aspire](https://learn.microsoft.com/en-us/dotnet/aspire/get-started/aspire-overview) to visualize those metrics.
+If those questions resonate with you, please follow along, I will show you how to use [OpenTelemetry](https://opentelemetry.io/) to track usage metrics and [Aspire](https://learn.microsoft.com/en-us/dotnet/aspire/get-started/aspire-overview) to visualize those metrics.
 As we all know, APIs tend to evolve and managing API versioning is a tricky business. More often than not we need to live with multiple versions of an API just because we are not sure if you can delete the older version of the API and you choose the "better safe than sorry" way of dealing with the problem.
 
-## Marking obsolete endpoints
+## Marking endpoints as obsolete
 
 In ASP.NET Core there's no first-class support for obsoleting endpoints. To do so we can add some metadata to endpoints we want to obsolete and emit some metric every time an endpoint with our newly added metadata executes.
 
-To add metadata to endpoints we use C# attributess. You can implement your custom attribute or, preferably, use the built-in `[ObsoleteAttribute]` that will mark the endpoint as deprecated and will also reflect in the Swagger UI as shown below (*See the grey color and the strikethrough)*:
+To add metadata to endpoints we use C# attributess. You can implement your custom attribute or, preferably, use the built-in `[ObsoleteAttribute]` that will mark the endpoint as deprecated and will also reflect in the Swagger UI as shown below (*See the grey color and the strikethrough name)*:
 
 ![Swagger UI obsolete endpoints](images/swagger-ui-obsolete-endpoints-min.png "Swagger UI obsolete endpoints")
 
