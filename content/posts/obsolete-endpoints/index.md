@@ -147,7 +147,7 @@ public class ObsoleteActionFilter : IAsyncActionFilter
         if (obsoleteAttribute is not null)
         {
             // Enrich current span
-            var activity = context.HttpContext.Features.Get<IHttpActivityFeature>()?.Activity;;
+            var activity = context.HttpContext.Features.Get<IHttpActivityFeature>()?.Activity;
             activity.EnrichWithActionContext(context);
 
             // Emit custom metric
@@ -242,7 +242,7 @@ This allows you to add all additional information your analysis will require.
 Please be aware that's quite easy to discose sensitive data in your APM of choice when adding for example the full URI, so beware of what tags you're adding to the span.
 {{< /alert >}}
 
-This is how the span will show in Aspire:
+This is how the span will show in Aspire (_Please note the addition of the ObsoleteEndpoint and DisplayUrl values_):
 ![Obsolete trace](images/traces-min.png "Obsolete trace")
 
 Aspire, as of now (June 2024) is mostly a development time tool that allows you to quickly coordinate and run a distributed application.
