@@ -47,7 +47,7 @@ params:
     reactionsEnabled: '1'
     emitMetadata: '0'
     inputPosition: bottom
-    theme: dark_dimmed
+    theme: cobalt
     lang: en
     loading: lazy
   social:

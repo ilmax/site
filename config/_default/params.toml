@@ -9,7 +9,7 @@ defaultFeaturedImage = ""
 highlightCurrentMenuArea = "enable"
 
 [header]
-layout = "basic"
+layout = "fixed"
 
 [footer]
 showMenu = true
@@ -20,9 +20,9 @@ showScrollToTop = true
 
 [homepage]
 layout = "profile"
-showRecent = false
+showRecent = true
 showRecentItems = 5
-showMoreLink = false
+showMoreLink = true
 showMoreLinkDest = "/posts"
 cardView = false
 cardViewScreenWidth = false
@@ -50,10 +50,10 @@ showReadingTime = true
 showTableOfContents = true
 showTaxonomies = true
 showAuthorsBadges = false
-showWordCount = true
+showWordCount = false
 showZenMode = true
 showComments = true
-sharingLinks = ["email", "facebook", "linkedin", "twitter"]
+sharingLinks = [ "email", "facebook", "linkedin", "twitter", "bluesky" ]
 
 [list]
 showHero = false
