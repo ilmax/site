@@ -117,7 +117,7 @@ OpenTelemetry allows us to emit [metric signals](https://opentelemetry.io/docs/c
 Showing how to best use OpenTelemetry is outside of the scope of this article, but if you're interested there's a great and very pragmatic [YoutTube video](https://www.youtube.com/watch?v=WzZI_IT6gYo&ab_channel=NDCConferences) on how to do telemetry in dotnet by [Martin Thwaites](https://x.com/MartinDotNet) that can get you up to speed quickly.
 {{< /alert >}}
 
-Please note that the `Meter` class needs to be a singleton and you should configure OpenTelemetry to listen to the specific meter using the same name to get telemetry emitted. Don't worry if this sounds a bit convoluted now, especially if you're not so familiar with how OpenTelemetry works in dotnet. Martin does an excellent job in getting you up to speed quickly, moreover you can all find all the source code for this article in my GitHub repository
+Please note that the `Meter` class needs to be a singleton and you should configure OpenTelemetry to listen to the specific meter using the same name to get telemetry emitted. Don't worry if this sounds a bit convoluted now, especially if you're not so familiar with how OpenTelemetry works in dotnet. Martin does an excellent job in getting you up to speed quickly, moreover you can also find all the source code for this article in my GitHub repository
 {{< github repo="ilmax/obsolete-endpoints" >}}
 
 So without further ado, here's the OpentTelementry code:
@@ -147,7 +147,7 @@ public class ObsoleteActionFilter : IAsyncActionFilter
         if (obsoleteAttribute is not null)
         {
             // Enrich current span
-            var activity = context.HttpContext.Features.Get<IHttpActivityFeature>()?.Activity;;
+            var activity = context.HttpContext.Features.Get<IHttpActivityFeature>()?.Activity;
             activity.EnrichWithActionContext(context);
 
             // Emit custom metric
@@ -242,7 +242,7 @@ This allows you to add all additional information your analysis will require.
 Please be aware that's quite easy to discose sensitive data in your APM of choice when adding for example the full URI, so beware of what tags you're adding to the span.
 {{< /alert >}}
 
-This is how the span will show in Aspire:
+This is how the span will show in Aspire (_Please note the addition of the ObsoleteEndpoint and DisplayUrl values_):
 ![Obsolete trace](images/traces-min.png "Obsolete trace")
 
 Aspire, as of now (June 2024) is mostly a development time tool that allows you to quickly coordinate and run a distributed application.
