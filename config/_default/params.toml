@@ -7,6 +7,7 @@ disableImageOptimization = false
 disableTextInHeader = false
 defaultFeaturedImage = ""
 highlightCurrentMenuArea = "enable"
+defaultBackgroundImage = "background.jpg"
 
 [header]
 layout = "fixed"
@@ -19,14 +20,15 @@ showAppearanceSwitcher = true
 showScrollToTop = true
 
 [homepage]
-layout = "profile"
+layout = "hero"
+homepageImage = "background.jpg"
 showRecent = true
 showRecentItems = 5
 showMoreLink = true
 showMoreLinkDest = "/posts"
 cardView = false
 cardViewScreenWidth = false
-layoutBackgroundBlur = false
+layoutBackgroundBlur = true
 
 [article]
 showDate = true
@@ -36,6 +38,7 @@ showDateOnlyInArticle = false
 showDateUpdated = false
 showAuthor = true
 showHero = true
+heroStyle = "background"
 layoutBackgroundBlur = true
 layoutBackgroundHeaderSpace = true
 showBreadcrumbs = false
@@ -56,7 +59,8 @@ showComments = true
 sharingLinks = [ "email", "facebook", "linkedin", "twitter", "bluesky" ]
 
 [list]
-showHero = false
+showHero = true
+heroStyle = "background"
 layoutBackgroundBlur = true
 layoutBackgroundHeaderSpace = true
 showBreadcrumbs = false
@@ -80,9 +84,14 @@ showBreadcrumbs = false
 showViews = false
 showLikes = false
 showTableOfContents = true
+showHero = true
+heroStyle = "background"
+layoutBackgroundBlur = true
 
 [term]
-showHero = false
+showHero = true
+heroStyle = "background"
+layoutBackgroundBlur = true
 showBreadcrumbs = false
 showViews = false
 showLikes = false
