@@ -21,7 +21,7 @@ To add metadata to endpoints we use C# attributess. You can implement your custo
 ![Swagger UI obsolete endpoints](images/swagger-ui-obsolete-endpoints-min.png "Swagger UI obsolete endpoints")
 
 {{< alert >}}
-Please note that if you use `WithOpenApi()` on a inimal API, it doesn't show the endpoint as obsolete in the UI, refer to the [documentation](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/openapi?view=aspnetcore-8.0) to correctly setup OpenApi in Minimal API
+Please note that if you use `WithOpenApi()` on a minimal API, it doesn't show the endpoint as obsolete in the UI, refer to the [documentation](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/openapi?view=aspnetcore-8.0) to correctly setup OpenApi in Minimal API
 {{< /alert >}}
 
 For controllers, you can add the `[Obsolete]` attribute to either a specific controller action or the entire controller, as shown below:
