@@ -8,6 +8,7 @@ disableTextInHeader = false
 defaultFeaturedImage = ""
 highlightCurrentMenuArea = "enable"
 defaultBackgroundImage = "background.jpg"
+smartTOC = "true"
 
 [header]
 layout = "fixed"
