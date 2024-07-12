@@ -7,14 +7,14 @@ tags: ["Kubernetes", "homelab", "rpi", "tutorial"]
 
 ## Motivation
 
-I recently bought a few Raspberry PI 5 SBCs to play around with Kubernetes at home and, without noticing, I started spending a lot of my free time playing around with it.
+I recently bought a few Raspberry PI 5 SBCs to play around with Kubernetes at home and, without noticing, I started spending a lot of my free time with it.
 
 The initial set of features that I wanted to set up were the following:
 
 - Multinode k8s Cluster
-- Do not expose services to the internet
+- Do not expose any internal service to the internet
 - Resolve internal services deployed on the cluster via domain name
-- Have free SSL certificates and certificate renewal
+- Have free SSL certificates and automated certificate renewal
 
 As we will soon see, even this limited set of features, requires a decent amount of work to configure, so this process is split into a mini-series of articles to keep them relatively short.
 
@@ -48,8 +48,8 @@ sudo apt autoremove -y
 I decided to set each Raspberry PI IP to a static value, this step is not strictly required but if your node changes IP, you will be in for a fun debugging session, so just to make things simpler, let's configure the Raspberry PIs with a static IP.
 You can choose to do so in 2 different ways:
 
-1. Configure the router's DHCP reservation (if available) so that the router assigns the same IP address to the specified device using it's physical MAC address
-1. Configure the router not to limit the DHCP addresses available, and set the Raspberry PI IP configuration to manual
+1. Configure the router's DHCP reservation (if available) so that the router assigns the same IP address to the device identified by its physical MAC address
+1. Configure the router to limit the DHCP addresses available, and set the Raspberry PI IP configuration to manual
 
 I chose the second option because my router doesn't support DHCP reservation, so here's what I've done:
 
@@ -57,7 +57,7 @@ I chose the second option because my router doesn't support DHCP reservation, so
 1. Configure each Raspberry PI with an address starting from 201 up with the command below:
 
 ```sh
-sudo nmcli con mod preconfigured ipv4.method manual ipv4.addr 192.168.2.202/24 ipv4.gateway 192.168.2.254 ipv4.dns 192.168.2.59
+sudo nmcli con mod preconfigured ipv4.method manual ipv4.addr 192.168.2.201/24 ipv4.gateway 192.168.2.254 ipv4.dns 192.168.2.59
 sudo reboot
 ```
 
@@ -67,7 +67,7 @@ If you're using the WiFi interface, you can get the name of the connection using
 
 ### Configure the kernel to enable cgroup v2
 
-K3s requires cgroup v2 to function and, by default, they're disabled in the suggested Raspberry PI O.S. so we need to enable them as follows:
+K3s requires cgroup v2 to function and, by default, they're disabled in the Raspberry PI O.S. so we need to enable them as follows:
 
 ```sh
 echo ' cgroup_memory=1 cgroup_enable=memory' | sudo tee -a /boot/firmware/cmdline.txt 
@@ -91,7 +91,7 @@ nodev   cgroup2 <-- This tells us that cgroup v2 is enabled
 
 ## Master Node Installation
 
-The first node that we will install is the master node, I'm calling this out because the install instruction is a tiny bit different between the master node and the worker nodes.
+The first node that we will install is the master node, I'm calling this out because the install instruction is a little different between the master node and the worker nodes.
 
 1. SSH into your Raspberry PI using `ssh user@hostname.domain` or `ssh user@ip-address`
 1. Generate a random token, e.g. using OpenSSL
@@ -127,7 +127,7 @@ curl -sfL https://get.k3s.io | K3S_TOKEN=$K3S_TOKEN sh -s - server \
 ```
 
 {{<alert icon="info-solid" >}}
-Please note that the argument `--node-taint...` tells Kubernetes not to schedule any pod on this node, if you want to schedule pods on the master node as well, remove that argument but bear in mind that's not the suggested approach. If you set up a single Kubernetes node though, you have to remove that argument.
+Please note that the argument `--node-taint...` tells Kubernetes not to schedule pods on this node, if you want to schedule pods on the master node as well, remove that argument but bear in mind that's not the suggested approach. If you set up a single Kubernetes node though, you have to remove that argument.
 {{</alert>}}
 
 ### Installation parameters
@@ -136,7 +136,7 @@ Let's now look at all the parameters that we specified in the command line:
 
 - `-s server` Used to tell K3s to run in server mode (for master node) as opposed to agent mode (for worker nodes)
 - `--write-kubeconfig-mode '0644'` Writes the kubeconfig file with the specified mode
-- `--node-taint 'node-role.kubernetes.io/control-plane:NoSchedule'` Tells K3s to not schedule any user pods on the master node, K3S common services: core-dns and metric-service will still run on the master node
+- `--node-taint 'node-role.kubernetes.io/control-plane:NoSchedule'` Tells K3s to not schedule any user pods on the master node, K3s common services: core-dns and metric-service will still run on the master node
 - `--disable 'servicelb'` Do not install the built-in service load balancer (we will replace it with MetalLb later on)
 - `--disable 'traefik'` Do not install Traefik, we will install it manually so we will have access to its configuration
 - `--kube-controller-manager-arg 'bind-address=0.0.0.0'` Bind on all addresses to enable metrics scraping from an external node
@@ -170,9 +170,11 @@ To troubleshoot the installation you can look at the logs of the k3s service wit
 
 ## MetalLB Installation
 
-We will install MetalLB as our load balancer controller to enable external access to cluster services. In a cloud scenario, this role is usually taken care of by another service, for example for AKS you can use [AGIC](https://learn.microsoft.com/en-us/azure/application-gateway/ingress-controller-overview) that's using Azure Application Gateway as the ingress controller.
+We will install MetalLB as our load balancer controller to enable external access to cluster services. In a cloud scenario, the managed Kubernetes offering comes with a load balancer that gives you the ability to expose services of type `LoadBalancer` using a public IP (On Azure for example you can use a public [Standard Load Balancer](https://learn.microsoft.com/en-us/azure/aks/load-balancer-standard)).
+
 K3s comes with a built-in load balancer called serviceLB, but this only exposes services on the node addresses, with something like MetalLB we can instead use a service of type `LoadBalancer` and get a specific IP for that service.
-Without MetalLB if you create a service of type `LoadBalancer`, the external IP will be stuck in `<pending>` when looking at it via the `kubectl get services -n namespace`.
+
+Without MetalLB if you create a service of type `LoadBalancer`, the external IP will be stuck in `<pending>` state when looking at it via the `kubectl get services -n namespace`.
 
 In our case, we need to expose the Traefik Ingress Controller using an IP address of the internal home network and MetalLB allows us to achieve this.
 
@@ -188,7 +190,7 @@ Since there's no clear winner here, I'm opting for using the layer 2 approach.
 You can look at the limitation for [layer 2 mode](https://metallb.universe.tf/concepts/layer2/#limitations) or the [BGP mode](https://metallb.universe.tf/concepts/bgp/#limitations) on the MetalLB documentation
 {{</alert>}}
 
-Logically we need to reserve some IP in your DHCP configuration so that there won't be other appliances with the same IP on the network. You should be able to configure your router to reserve some IP addresses, and then you can use those IP addresses in a Metallb `AddressPool`.
+Logically we need to reserve some IP in the DHCP configuration so that there won't be multiple appliances with the same IP on the network. You should be able to configure your router to reserve some IP addresses, and then you can use those IP addresses in a Metallb `AddressPool`.
 
 1. Install Metallb via kubectl apply
 
@@ -235,7 +237,7 @@ If you connect the Raspberry PI to the network via WiFi, you need to also change
 
 **If you connect the Raspberry PI to the network via ethernet, skip this step.**
 
-If you want to make the configuration persistent, we need to implement a bit of a workaround using a service that starts after the network service comes online, and executes our command `ifconfig wlan0 promisc`
+If you want to make the configuration persistent, we need to implement a little workaround using a Linux service that starts after the network service comes online, and executes our command `ifconfig wlan0 promisc`
 
 Here below you can see the code for such a service:
 
@@ -273,7 +275,7 @@ After the deployment succeeds, we need to check if the newly created service get
 ```sh
 kubectl get service -n test-metallb
 NAME    TYPE           CLUSTER-IP      EXTERNAL-IP     PORT(S)        AGE
-nginx   LoadBalancer   10.43.247.187   192.168.2.150   80:30129/TCP   13s
+nginx   LoadBalancer   10.43.247.187   192.168.2.210   80:30129/TCP   13s
 ```
 
 After navigating to the exposed IP address in the browser, we can now safely remove this test namespace via:
@@ -284,15 +286,15 @@ kubectl delete namespace test-metallb
 
 ## Traefik installation
 
-I picked Traefik as my Kubernetes Ingress Controller. This comes built into the K3s bundle but I decided to install it manually to target the latest version available (3.10 at the time of writing) hence I disabled it while installing K3s so, here we are, doing that step manually.
+I picked Traefik as my Kubernetes Ingress Controller. This comes built into the K3s bundle but I decided to install it manually to target the latest version available (3.10 at the time of writing) hence I disabled it while installing K3s so, here we are, installing it manually.
 
 We can use Traefik on Kubernetes in different ways:
 
-- Using standard Kubernetes Ingress (May require several annotations for non-straightforward setup)
+- Using standard Kubernetes Ingress (May require several annotations for non-straightforward configurations)
 - Using Traefik IngressRoute (Custom CRD)
-- Using the newer Kubernetes Gateway API (Support is not yet complete at the time of writing, July 2024)
+- Using the newer Kubernetes Gateway API (Support of the Gateway API is not yet complete at the time of writing, July 2024)
 
-I decided to use the custom CRD approach waiting for the GA support of the Gateway API (a new and improved networking specification that is the successor of the Ingress) because the configuration required is small and resonates well with me.
+I decided to use the custom CRD approach waiting for the GA support of the Gateway API (a new and improved networking specification that is the successor of the Ingress) because of the little configuration required and it also resonates well with me.
 
 Anyway let's see how to install and configure Traefik:
 
