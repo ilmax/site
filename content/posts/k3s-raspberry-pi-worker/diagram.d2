@@ -1,0 +1,21 @@
+direction: down
+master: {
+  shape: image
+  icon: https://raw.githubusercontent.com/kubernetes/community/master/icons/svg/infrastructure_components/unlabeled/control-plane.svg
+  label: pi-node-01(master)\n192.168.2.201
+}
+
+node_01: {
+  shape: image
+  icon: https://raw.githubusercontent.com/kubernetes/community/master/icons/svg/infrastructure_components/unlabeled/node.svg
+  label: pi-node-02\n192.168.2.202
+}
+
+node_02: {
+  shape: image
+  icon: https://raw.githubusercontent.com/kubernetes/community/master/icons/svg/infrastructure_components/unlabeled/node.svg
+  label: pi-node-03\n192.168.2.203
+}
+
+master -> node_01
+master -> node_02

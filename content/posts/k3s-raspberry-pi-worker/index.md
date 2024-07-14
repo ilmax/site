@@ -9,7 +9,7 @@ tags: ["Kubernetes", "homelab", "rpi", "tutorial"]
 
 In the last article of this mini-series, we ended up configuring the master node and configuring kubectl on our PC, now it's time to configure the worker nodes and add them to the cluster, here's the final state with my names & IPs so you can follow along:
 
-{{<figure src="k3scluster.png" alt="The K3s multinode cluster" caption="*The diagram of the K3s multinode cluster*" nozoom=true >}}
+{{<figure src="k3scluster.svg" alt="The K3s multinode cluster" caption="*The diagram of the K3s multinode cluster*" nozoom=true >}}
 
 ## Operating System Preparation
 
@@ -120,10 +120,28 @@ If you are like me and want to change the `<none>` role to correctly be a worker
 kubectl label node pi-node-02 kubernetes.io/role=worker
 ```
 
+## Lens Metrics
+
+If you're using [Lens](https://k8slens.dev/), the Kubernetes GUI, you can configure the metrics displayed in the cluster overview page to display some information about your cluster, like memory usage and CPU usage as displayed in the picture below:
+
+{{<figure src="lens.png" alt="Lens cluster metrics" caption="*The cluster metrics displayed by Lens*" nozoom=true >}}
+
+1. Installing Prometheus
+1. Configure lens metrics to use Helm
+1. Specify the Prometheus service address
+
+```sh
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install prometheus prometheus-community/prometheus --namespace monitoring --create-namespace
+```
+
+In Lens, from the catalog, go to the cluster setting -> Metrics and set the Prometheus service address to: `monitoring/prometheus-server:80`
+
 ## Conclusions
 
 That's all it takes to add a K3s node to an existing cluster, if you have multiple nodes, you can simply repeat those steps multiple times.
-So far we installed a multinode cluster, but haven't implemented any single of the features put together in the first post, in the next post of the series though we will work on adding those capabilities. 
+So far we installed a multinode cluster, but haven't implemented any single of the features put together in the first post, in the next post of the series though we will work on adding those capabilities.
 
 See you in the next post!
 
