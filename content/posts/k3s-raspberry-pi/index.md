@@ -34,7 +34,7 @@ One of the more common distributions of Kubernetes that are installed on the Ras
 
 Let's first update all the installed packages and the kernel itself.
 
-1. SSH into the Raspberry PI using either the `ssh user@hostname.domain` format (if you don't have a domain configured you can use the hostname.local, for me for example it's `pi-node-01.local`) or `ssh user@ip-address`
+1. SSH into the Raspberry PI using either the `ssh user@hostname.domain` format (if you don't have a domain configured you can use the hostname.local, for me for example it's `ssh pi-node-01.local`) or `ssh user@ip-address`
 1. Update apt packages & OS using the following commands:
 
 ```sh
@@ -44,6 +44,9 @@ sudo apt-get dist-upgrade -y
 sudo apt --fix-broken install -y
 sudo apt autoremove -y
 ```
+{{<alert icon="info-solid">}}
+More information on what is the **local** domain and how it works can be found [here](https://en.wikipedia.org/wiki/.local)
+{{</alert>}}
 
 ### Configure a static IP on the Raspberry PI
 
