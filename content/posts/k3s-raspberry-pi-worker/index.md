@@ -1,19 +1,19 @@
 ---
-title: "Install k3s on a Raspberry PI - Worker node"
+title: "Install K3s on a Raspberry PI - Worker node"
 date: 2024-07-12T09:23:18+02:00
-draft: true
+draft: false
 series: ["K3s on Raspberry PI"]
 series_order: 2
 tags: ["Kubernetes", "homelab", "rpi", "tutorial"]
 ---
 
-In the last article of this mini-series, we configured the master node and kubectl on our PC, now it's time to configure the worker nodes and join them to the cluster, here's the final state with my hostnames and IPs:
+In the first article of this mini-series, we configured the master node and kubectl on our PC, now it's time to configure the worker nodes and join them to the cluster, here's the final state with my hostnames and IPs:
 
 {{<figure src="k3scluster.svg" alt="The K3s multinode cluster" caption="*The diagram of the K3s multinode cluster*" nozoom=true >}}
 
 ## Operating System Preparation
 
-Similar to the previous article, we will go through some basic O.S. configuration and then start the installation of K3s on the new node. Since those steps were already explained in the first post of the series, I will only show the relevant command to execute, if you want to read a bit more, you can go back the the first article of the series.
+Similar to the previous article, we will go through some basic O.S. configuration and then start the installation of K3s on the new node. Since those steps were already explained in the first post of the series, I will only show the relevant command to execute, if you want to get more details about what those commands do, please refer to the first article of the series.
 
 ### OS & Packages updates
 
@@ -35,7 +35,9 @@ More information on what is the **local** domain and how it works can be found [
 ### Configure a static IP on the Raspberry PI
  
 ```sh
-sudo nmcli con mod preconfigured ipv4.method manual ipv4.addr 192.168.2.202/24 ipv4.gateway 192.168.2.254 ipv4.dns 192.168.2.59
+nmcli con show
+connetion={add your connection name here}
+sudo nmcli con mod $connection ipv4.method manual ipv4.addr 192.168.2.202/24 ipv4.gateway 192.168.2.254 ipv4.dns 192.168.2.59
 sudo reboot
 ```
 
@@ -80,23 +82,23 @@ The worker node installation is similar to the master node one, we still have to
     EOF
     ```
 
-1. Set the variable NODE_TOKEN with the value of the node token copied from the server in step 2
+1. Set the variable `MASTER_TOKEN` with the value of the node token copied from the server in step 2
 
     ```sh
-    export NODE_TOKEN=K10....
+    export MASTER_TOKEN=K10....
     ```
 
-1. Set the variable MASTER_IP with the IP of the master node
+1. Set the variable `MASTER_IP` with the IP of the master node
 
     ```sh
     export MASTER_IP=192.168.2.201
     ```
 
-1. SSH Into the worker host and Install k3s using the command below:
+1. SSH Into the worker host and Install K3s using the command below:
 
     ```sh
     curl -sfL https://get.k3s.io | K3S_URL=https://$MASTER_IP:6443 \
-    K3S_TOKEN=$NODE_TOKEN sh -s - --node-label 'node_type=worker' \
+    K3S_TOKEN=$MASTER_TOKEN sh -s - --node-label 'node_type=worker' \
     --kubelet-arg 'config=/etc/rancher/k3s/kubelet.config' \
     --kube-proxy-arg 'metrics-bind-address=0.0.0.0'
     ```
@@ -106,9 +108,9 @@ The worker node installation is similar to the master node one, we still have to
 Let’s now look at all the parameters that we specified in the command line:
 
 - `K3S_URL` Is used to specify the address of the master node, this also assumes it's an agent installation (as opposed to a server one)
-- `K3S_TOKEN` This is the token we copied from the K3s master node that will be used by k3s to join the cluster
-- `--node-label 'node_type=worker'` This is a random label that we add to the node, label name and value are completely up to you, can be omitted
-- `--kubelet-arg 'config=/etc/rancher/k3s/kubelet.config'` Specify the position of the kubelet config file (the one we generated in the previous step)
+- `K3S_TOKEN` This is the token we copied from the K3s master node that will be used by K3s to join the cluster
+- `--node-label 'node_type=worker'` This is a random label that we add to the node, label name and value are completely up to you, and can be omitted
+- `--kubelet-arg 'config=/etc/rancher/k3s/kubelet.config'` Specify the location of the kubelet config file (the one we generated in the previous step)
 - `--kube-proxy-arg 'metrics-bind-address=0.0.0.0'` Bind on all addresses to enable metrics scraping from an external node
 
 ### Verify worker node installation
@@ -122,7 +124,7 @@ pi-node-01            Ready    control-plane,master   20m   v1.29.5+k3s1
 pi-node-02            Ready    <none>                 20s   v1.29.5+k3s1
 ```
 
-If you want to change the role from `<none>` to `worker`, we need to add a label to the node, that can achieved via the following command:
+If you want to change the role from `<none>` to `worker`, we need to add a label to the node, which can achieved via the following command:
 
 ```sh
 kubectl label node pi-node-02 kubernetes.io/role=worker
@@ -141,11 +143,11 @@ If you're using [Lens](https://k8slens.dev/), the Kubernetes GUI, you can config
 
 1. Install Prometheus with the following commands
 
-```sh
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-helm install prometheus prometheus-community/prometheus --namespace monitoring --create-namespace
-```
+    ```sh
+    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+    helm repo update
+    helm install prometheus prometheus-community/prometheus --namespace monitoring --create-namespace
+    ```
 
 1. Configure lens metrics to use Helm
 1. Specify the Prometheus service address
