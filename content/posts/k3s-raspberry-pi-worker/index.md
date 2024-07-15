@@ -122,14 +122,15 @@ pi-node-01            Ready    control-plane,master   20m   v1.29.5+k3s1
 pi-node-02            Ready    <none>                 20s   v1.29.5+k3s1
 ```
 
-If you are like me and want to change the `<none>` role to correctly be a worker, we can run the following command:
+If you want to change the role from `<none>` to `worker`, we need to add a label to the node, that can achieved via the following command:
 
 ```sh
 kubectl label node pi-node-02 kubernetes.io/role=worker
 ```
 
 {{<alert>}}
-Please note that's not possible to specify the label `kubernetes.io/role=worker` at K3s installation time using the parameter `--node-label` Installation will result in an error, thus we have to manually label the node after the installation
+Please note that's not possible to specify the label `kubernetes.io/role=worker` at K3s installation time using the parameter `--node-label`.
+The installation will result in an error, thus we have to manually label the node after the installation
 {{</alert>}}
 
 ## Lens Metrics
@@ -138,9 +139,7 @@ If you're using [Lens](https://k8slens.dev/), the Kubernetes GUI, you can config
 
 {{<figure src="lens.png" alt="Lens cluster metrics" caption="*The cluster metrics displayed by Lens*" nozoom=true >}}
 
-1. Installing Prometheus
-1. Configure lens metrics to use Helm
-1. Specify the Prometheus service address
+1. Install Prometheus with the following commands
 
 ```sh
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -148,7 +147,13 @@ helm repo update
 helm install prometheus prometheus-community/prometheus --namespace monitoring --create-namespace
 ```
 
-In Lens, from the catalog, go to the cluster setting -> Metrics and set the Prometheus service address to `monitoring/prometheus-server:80`
+1. Configure lens metrics to use Helm
+1. Specify the Prometheus service address
+
+In Lens, from the catalog, go to the cluster setting -> Metrics and set the Prometheus service address to `monitoring/prometheus-server:80` as shown below:
+
+
+{{<figure src="lens-metrics-config.png" alt="Lens cluster metrics configuration" caption="*The cluster metrics configuration in Lens*" nozoom=true >}}
 
 ## Conclusions
 
