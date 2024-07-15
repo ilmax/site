@@ -1,5 +1,5 @@
 ---
-title: "Install k3s on a Raspberry PI - Master node"
+title: "Install K3s on a Raspberry PI - Master node"
 date: 2024-07-01T18:55:40+02:00
 draft: false
 series: ["K3s on Raspberry PI"]
@@ -147,7 +147,7 @@ Let's now look at all the parameters that we specified in the command line:
 - `--kube-controller-manager-arg 'bind-address=0.0.0.0'` Bind on all addresses to enable metrics scraping from an external node
 - `--kube-proxy-arg 'metrics-bind-address=0.0.0.0'` Bind on all addresses to enable metrics scraping from an external node
 - `--kube-scheduler-arg 'bind-address=0.0.0.0'` Bind on all addresses to enable metrics scraping from an external node
-- `--kubelet-arg 'config=/etc/rancher/k3s/kubelet.config'` Specify the position of the kubelet config file (the one we generated in the previous step)
+- `--kubelet-arg 'config=/etc/rancher/k3s/kubelet.config'` Specify the location of the kubelet config file (the one we generated in the previous step)
 - `--kube-controller-manager-arg 'terminated-pod-gc-threshold=3'` This setting limits to 3 the number of terminated pods that can exist before the terminated pod garbage collector starts deleting terminated pods. See [Pod Garbage collection](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-garbage-collection)
 
 ### Copy the kubeconfig files
