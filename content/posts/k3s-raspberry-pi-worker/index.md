@@ -26,6 +26,7 @@ Similar to the previous article, we will go through some basic O.S. configuratio
     sudo apt-get dist-upgrade -y
     sudo apt --fix-broken install -y
     sudo apt autoremove -y
+    sudo apt autoclean
     ```
 
 {{<alert icon="info-solid">}}
@@ -37,9 +38,11 @@ More information on what is the **local** domain and how it works can be found [
 ```sh
 nmcli con show
 connetion={add your connection name here}
-sudo nmcli con mod $connection ipv4.method manual ipv4.addr 192.168.2.202/24 ipv4.gateway 192.168.2.254 ipv4.dns 192.168.2.59
+sudo nmcli con mod $connection ipv4.method manual ipv4.addr 192.168.2.202/24 ipv4.gateway 192.168.2.254 ipv4.dns "192.168.2.59 1.1.1.1"
 sudo reboot
 ```
+
+>Please note that 192.168.2.59 is the IP of my Pi-Hole used as my dns resolver
 
 ### Configure the kernel to enable cgroup v2
 
@@ -62,7 +65,7 @@ nodev   cgroup2 <-- This tells us that cgroup v2 is enabled
 The worker node installation is similar to the master node one, we still have to run the k3s install script, but we will change some parameters, we need to tell K3s that's going to act as a worker and what the master node IP is, let's see how here below:
 
 1. SSH into your Raspberry PI master node using `ssh user@hostname.domain` or `ssh user@ip-address`
-1. Copy the master node token using the following command:
+1. Copy the master node token displayed using the following command:
 
     ```sh
     sudo cat /var/lib/rancher/k3s/server/node-token
@@ -98,9 +101,9 @@ The worker node installation is similar to the master node one, we still have to
 
     ```sh
     curl -sfL https://get.k3s.io | K3S_URL=https://$MASTER_IP:6443 \
-    K3S_TOKEN=$MASTER_TOKEN sh -s - --node-label 'node_type=worker' \
-    --kubelet-arg 'config=/etc/rancher/k3s/kubelet.config' \
-    --kube-proxy-arg 'metrics-bind-address=0.0.0.0'
+      K3S_TOKEN=$MASTER_TOKEN sh -s - --node-label 'node_type=worker' \
+      --kubelet-arg 'config=/etc/rancher/k3s/kubelet.config' \
+      --kube-proxy-arg 'metrics-bind-address=0.0.0.0'
     ```
 
 ### Installation Parameters
@@ -109,7 +112,7 @@ Let’s now look at all the parameters that we specified in the command line:
 
 - `K3S_URL` Is used to specify the address of the master node, this also assumes it's an agent installation (as opposed to a server one)
 - `K3S_TOKEN` This is the token we copied from the K3s master node that will be used by K3s to join the cluster
-- `--node-label 'node_type=worker'` This is a random label that we add to the node, label name and value are completely up to you, and can be omitted
+- `--node-label 'node_type=worker'` This is a random label that we add to the node, label name and value are completely up to you and can be omitted
 - `--kubelet-arg 'config=/etc/rancher/k3s/kubelet.config'` Specify the location of the kubelet config file (the one we generated in the previous step)
 - `--kube-proxy-arg 'metrics-bind-address=0.0.0.0'` Bind on all addresses to enable metrics scraping from an external node
 
@@ -160,7 +163,7 @@ In Lens, from the catalog, go to the cluster setting -> Metrics and set the Prom
 ## Conclusions
 
 That's all it takes to add a K3s node to an existing cluster, if you have multiple nodes, you can simply repeat those steps multiple times.
-So far we installed a multinode cluster, but haven't implemented any of the features discussed in the first post, in the next post of the series though we will start to implement those capabilities.
+So far we installed a multinode cluster, so only implemented the first of the features discussed in the first post, in the next post of the series though we will start to implement the other capabilities.
 
 See you in the next post!
 
