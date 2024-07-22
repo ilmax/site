@@ -1,7 +1,7 @@
 ---
 title: "Install K3s on a Raspberry PI - TLS certificates"
 date: 2024-07-16T20:45:15+02:00
-draft: true
+draft: false
 series: ["K3s on Raspberry PI"]
 series_order: 3
 tags: ["Kubernetes", "homelab", "rpi", "tutorial"]
