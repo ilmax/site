@@ -43,6 +43,7 @@ sudo apt-get upgrade -y
 sudo apt-get dist-upgrade -y
 sudo apt --fix-broken install -y
 sudo apt autoremove -y
+sudo apt autoclean
 ```
 {{<alert icon="info-solid">}}
 More information on what is the **local** domain and how it works can be found [here](https://en.wikipedia.org/wiki/.local)
@@ -62,9 +63,11 @@ I chose the second option because my router doesn't support DHCP reservation, so
 1. Configure each Raspberry PI with an address starting from 201 up with the command below:
 
 ```sh
-sudo nmcli con mod preconfigured ipv4.method manual ipv4.addr 192.168.2.201/24 ipv4.gateway 192.168.2.254 ipv4.dns 192.168.2.59
+sudo nmcli con mod preconfigured ipv4.method manual ipv4.addr 192.168.2.201/24 ipv4.gateway 192.168.2.254 "192.168.2.59 1.1.1.1"
 sudo reboot
 ```
+
+>Please note that 192.168.2.59 is the IP of my Pi-Hole used as my dns resolver
 
 where **preconfigured** is the name of my connection, configured by the Raspberry PI Imager that I preconfigure while flashing the O.S. to the SD card.
 You can list all the connection names using the command `nmcli connections show`.
@@ -124,11 +127,11 @@ The first node that we will install is the master node, I'm calling this out bec
 
 ```sh
 curl -sfL https://get.k3s.io | K3S_TOKEN=$K3S_TOKEN sh -s - server \
---write-kubeconfig-mode '0644' --node-taint 'node-role.kubernetes.io/control-plane:NoSchedule' \
---disable 'servicelb' --disable 'traefik' \
---kube-controller-manager-arg 'bind-address=0.0.0.0' --kube-proxy-arg 'metrics-bind-address=0.0.0.0' \
---kube-scheduler-arg 'bind-address=0.0.0.0' --kubelet-arg 'config=/etc/rancher/k3s/kubelet.config' \
---kube-controller-manager-arg 'terminated-pod-gc-threshold=10'
+  --write-kubeconfig-mode '0644' --node-taint 'node-role.kubernetes.io/control-plane:NoSchedule' \
+  --disable 'servicelb' --disable 'traefik' \
+  --kube-controller-manager-arg 'bind-address=0.0.0.0' --kube-proxy-arg 'metrics-bind-address=0.0.0.0' \
+  --kube-scheduler-arg 'bind-address=0.0.0.0' --kubelet-arg 'config=/etc/rancher/k3s/kubelet.config' \
+  --kube-controller-manager-arg 'terminated-pod-gc-threshold=10'
 ```
 
 {{<alert icon="info-solid" >}}

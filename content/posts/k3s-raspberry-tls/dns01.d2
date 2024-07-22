@@ -1,0 +1,16 @@
+shape: sequence_diagram
+
+cert-manager: cert-manager
+let'sencrypt: Let's Encrypt
+DNS-host: DNS Host
+
+cert-manager -> let'sencrypt: Submit new order (certificate) request
+let'sencrypt -> let'sencrypt: Create new order
+let'sencrypt -> cert-manager: Provide list of challenges
+cert-manager -> cert-manager: Generate TXT record
+cert-manager -> DNS-host: Update DNS records
+cert-manager -> let'sencrypt: Notify challenge is ready
+let'sencrypt -> DNS-host: Verify TXT record exists
+cert-manager -> let'sencrypt: Finalize the order and submit a CSR
+let'sencrypt -> let'sencrypt: Generate certificate
+cert-manager <- let'sencrypt: Download certificate
