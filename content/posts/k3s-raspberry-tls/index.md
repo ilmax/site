@@ -7,7 +7,7 @@ series_order: 3
 tags: ["Kubernetes", "homelab", "rpi", "tutorial"]
 ---
 
-If you are following along in the series, so far we have configured the master node, added a few worker nodes to the cluster. Now it's time to implement a fun part, the TLS certificate management for our internally exposed web applications, so without further ado, let's dive right into it.
+If you have been following along in this series, so far we have configured the master node and added a few worker nodes to the cluster. Now it's time to implement a fun part, the TLS certificate management for our internally exposed web applications, so without further ado, let's dive right into it.
 
 ## Mixing cert-manager, Let's Encrypt & Cloudflare
 
@@ -34,7 +34,7 @@ Let's Encrypt supports several challenge types:
 - DNS-01
 - TLS-ALPN-01
 
-Out of those 3, HTTP-01 and TLS-ALPN-01 require your server to be exposed to the internet, so the only suitable challenge we can pick is DNS-01.
+Out of those 3, HTTP-01 and TLS-ALPN-01 require your server to be exposed to the internet, while our explicit goal is **not to** expose any service through the public internet, so the only suitable challenge we can pick is DNS-01.
 
 ### The DNS-01 challenge
 
@@ -42,13 +42,13 @@ The DNS-01 challenge process is represented in the following sequence diagram:
 
 {{<figure src="dns01.svg" alt="Let's Encrypt DNS01 challenge" caption="*The diagram DNS-01 challenge*" nozoom=true >}}
 
-{{<alert icon="lightbulb">}}
-If you want to read more about how the ACME protocol works, you can read the internet standard [RFC 8555](https://datatracker.ietf.org/doc/html/rfc8555)
+{{<alert icon="lightbulb" cardColor="#097969" conColor="#AFE1AF" textColor="#f1faee">}}
+**Tip:** If you want to read more about how the ACME protocol works, you can read the internet standard [RFC 8555](https://datatracker.ietf.org/doc/html/rfc8555)
 {{</alert>}}
 
 ### DNS Registrar
 
-I'm using Cloudflare as my registrar because I love their services, all the functionality I need from Cloudflare is supported by their API hence can be automated, there are a lot of integrations and it works natively with cert-manager.
+I'm using Cloudflare as my registrar because I love their services, their API allows us to automate DNS management, there are a lot of integrations already existing for Cloudflare and it works natively with cert-manager.
 
 Cloudflare is not the only provider supported by cert-manager and the list of all the supported providers for the DNS-01 challenge can be found [here](https://cert-manager.io/docs/configuration/acme/dns01/#supported-dns01-providers).
 
@@ -68,7 +68,7 @@ helm upgrade --install cert-manager jetstack/cert-manager \
 
 ### Generate Cloudflare API token
 
-Now that we installed cert-manager, we have to configure it to consume the Cloudflare API, so we have to create a Cloudflare API token to allow cert-manager to consume the Cloudflare API, the required permissions are:
+Now that we installed cert-manager, we have to configure it to consume the Cloudflare API. We have to create a Cloudflare API token to allow cert-manager to consume the Cloudflare API, for which the required permissions are:
 
 - Permissions:
 
@@ -88,9 +88,9 @@ kubectl create secret generic cloudflare-api-key-secret \
 
 ## Configure the staging ClusterIssuer
 
-When we install cert-manager, it creates some custom resource definitions (CRDs) that we will use to configure various aspects of the certificate request process, two of which are the `Issuer` or `ClusterIssuer`. Those resources represent certificate authorities (CAs) so this is the resource that will issue our cluster the TLS certificates.
+When we install cert-manager, it creates some custom resource definitions (CRDs) that we will use to configure various aspects of the certificate request process, two of which are the `Issuer` or `ClusterIssuer`. Those resources represent certificate authorities (CAs) that will issue our cluster the TLS certificates.
 
-Both resources are pretty much identical, with the only difference being that the `Issuer` is namespace scoped, while the other `ClusterIssuer` is global, so if you use the issuer and need a certificate for services in multiple namespaces, you need to deploy multiple `Issuer`s while with the `ClusterIssuer` one resource suffice for the whole cluster. For my homelab I've picked the `ClusterIssuer` one.
+Both resources are pretty much identical, with the only difference being that the `Issuer` is namespace scoped, while the other `ClusterIssuer` is global, so if you use the issuer and need a certificate for services in multiple namespaces, you need to deploy multiple `Issuer` resources while with the `ClusterIssuer` one resource will suffice for the whole cluster. For my homelab I've picked the `ClusterIssuer` one.
 
 On the `ClusterIssuer` we have to configure Let's Encrypt DNS-01 challenge and point the resource to the secret created earlier used to authenticate towards the Cloudflare API.
 
@@ -119,6 +119,10 @@ Let's see here below what the configuration looks like:
                name: cloudflare-api-key-secret  # Matches the name of the secret created earlier
                key: api-key                     # Matches the key of the secret created earlier
    ```
+  
+  {{<alert cardColor="#e63946" iconColor="#1d3557" icon="fire">}}
+  Make sure you replace the email in the manifest above.
+  {{</alert>}}
 
 1. Create the staging `ClusterIssuer` in the cluster
 
@@ -127,14 +131,14 @@ Let's see here below what the configuration looks like:
     ```
 
 {{<alert>}}
-If you use a different namespace than `cert-issuer`, you may need to configure the Cluster Issuer Namespace to specify cert-manager in which namespace to look for the Cloudflare secret. Make sure to read the documentation [here](https://cert-manager.io/docs/configuration/#cluster-resource-namespace)
+**Warn:** If you use a different namespace than `cert-issuer`, you may need to configure the Cluster Issuer Namespace to specify cert-manager in which namespace to look for the Cloudflare secret. Make sure to read the documentation [here](https://cert-manager.io/docs/configuration/#cluster-resource-namespace)
 {{</alert>}}
 
 ### Verify staging ClusterIssuer installation
 
 To make sure everything is configured correctly, we will create a certificate issue request since we're using the staging API of Let's Encrypt, this certificate won't be used for TLS, only to make sure everything is configured correctly.
 
-Before proceeding, let's create an A record in Cloudflare that points to the Traefik service created in the first article of the series, to get the IP address let's use the following command:
+Before proceeding, let's create an A record in Cloudflare that points to the Traefik service created in the first article of the series. To get the IP address let's use the following command:
 
 ```sh
 kubectl get svc -n traefik
@@ -142,7 +146,7 @@ NAME      TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)                 
 traefik   LoadBalancer   10.43.63.113   192.168.2.210   80:31468/TCP,443:31486/TCP,443:31486/UDP   13d
 ```
 
-Here we are interested in the external IP, so we will create an A record that points to that IP. Please note that we are creating an A record in our DNS that points to a **private IP address**. This will allow us to resolve the services hosted in K3s using a a domain name and use TLS certificates, rather than using the IP.
+Here we are interested in the external IP, so we will create an A record that points to that IP. Please note that we are creating an A record in our DNS that points to a **private IP address**. This will allow us to resolve the services hosted in K3s using a domain name and use TLS certificates, rather than using the IP.
 
 For this example, I've created a temporary A record for the k3s subdomain in the `maxdon.tech` domain I own that points to 192.168.2.210, it looks like the following:
 
@@ -176,8 +180,8 @@ After the record has been created, it's time to test the certificate-issuing pro
      - k3s.maxdon.tech                        # This should be the same name of the A record created in Cloudflare earlier
    ```
 
-  {{<alert cardColor="#e63946" iconColor="#1d3557">}}
-  Make sure you replace the domain **maxdon.tech** with your own domain.
+  {{<alert cardColor="#e63946" iconColor="#1d3557" icon="fire">}}
+  Make sure you replace the domain **k3s.maxdon.tech** with your domain.
   {{</alert>}}
 
 1. Create the test certificate in the cluster
@@ -198,10 +202,10 @@ test-certificate   True   test-example-tls    75s
 Please note that this step can take up to a couple of minutes when using the DNS-01 challenge!
 {{</alert>}}
 
-If the process went well, we now have a secret that contains our certificate, the name of the secret is defined when we create the certificate resource, we can then inspect the secret using this command:
+If the process went well, we now have a secret that contains our certificate, the name of the secret is defined when we create the certificate resource, and we can then inspect the secret using this command:
 
 ```sh
-kubect describe -n test-cert secrets test-example-tls
+kubectl describe -n test-cert secrets test-example-tls
 Name:         test-example-tls
 Namespace:    test-cert
 Labels:       controller.cert-manager.io/fao=true
@@ -222,7 +226,7 @@ tls.crt:  3733 bytes
 tls.key:  1679 bytes
 ```
 
-As you can see, we have successfully obtained a certificate with the correct **common name**, we can also see that this certificate has been issued by the staging issuer, so this shouldn't in our services.
+As you can see, we have successfully obtained a certificate with the correct **common name**, we can also see that this certificate has been issued by the staging issuer, so this shouldn't be used in our services.
 
 ### Troubleshooting
 
@@ -256,7 +260,7 @@ If the certificate-issuing process fails, here are a few things to look out for:
         Type:                  Ready
     ```
 
-    This was due to an incorrect configuration of my DNS on the cluster nodes so the cluster couldn't correctly resolve hostnames, fixing the DNS issue, deleting and re-installing the `ClusterIssuer` fixed the issue.
+    This was due to an incorrect configuration of the DNS on the cluster nodes so the cluster couldn't correctly resolve hostnames. Fixing the DNS issue, and deleting and re-installing the `ClusterIssuer` resolved the error.
 
     For additional troubleshooting tips, refer to the cert-manager documentation on the subject [here](https://cert-manager.io/docs/troubleshooting/acme/#1-troubleshooting-clusterissuers).
 
@@ -282,11 +286,11 @@ If the certificate-issuing process fails, here are a few things to look out for:
     32m         Normal    Requested            certificate/test-certificate-wrong                         Created new CertificateRequest resource "test-certificate-wrong-1"
     ```
 
-    From here you can see that I requested a certificate for a domain I don't own (example.com)
+    From here you can see that I requested a certificate for a domain I don't own (example.tech)
 
 ### Cleanup the test certificate
 
-If you successfully managed to get a certificate using the staging `ClusterIssuer`, now it's time to clean up the test certificate and the relative secret, the quickest way to do so is to delete the whole namespace:
+If you successfully managed to get a certificate using the staging `ClusterIssuer`, now it's time to clean up the test certificate and the related secret. The quickest way to do so is to delete the whole namespace:
 
 ```sh
 kubectl delete ns test-cert
@@ -294,9 +298,9 @@ kubectl delete ns test-cert
 
 ## Configure the production ClusterIssuer
 
-Now, that we correctly obtained a staging certificate, it's time to configure cert-manager to use the production API of Let's Encrypt, in order to do so, we need to change the server URI and give it a different name, everything else stays exactly the same as the staging `ClusterIssuer`, see the updated manifest here below:
+Now, that we correctly obtained a staging certificate, it's time to configure cert-manager to use the production API of Let's Encrypt. To do so, we need to change the server URI and give it a different name, everything else stays the same as the staging `ClusterIssuer`, see the updated manifest here below:
 
-1. Create a file file called `clusterissuer-production.yml` and paste the following manifest into it:
+1. Create a file called `clusterissuer-production.yml` and paste the following manifest into it:
 
   ```yml
   apiVersion: cert-manager.io/v1
@@ -317,6 +321,9 @@ Now, that we correctly obtained a staging certificate, it's time to configure ce
               name: cloudflare-api-key-secret
               key: api-key
   ```
+  {{<alert cardColor="#e63946" iconColor="#1d3557" icon="fire">}}
+  Make sure you replace the email in the manifest above.
+  {{</alert>}}
 
 1. Create the staging `ClusterIssuer` in the cluster
 
@@ -335,11 +342,7 @@ letsencrypt-dns01-production-issuer  True    1m12s
 
 ### Verify production ClusterIssuer installation
 
-We can deploy a demo site using nginx and request a valid certificate from Let's Encrypt to verify that we can successfully obtain a valid TLS certificate from Let's Encrypt, copy and paste the following manifest in a file called `demosite.yml`:
-
-{{<alert cardColor="#e63946" iconColor="#1d3557">}}
-Make sure you replace the domain **maxdon.tech** with your own domain.
-{{</alert>}}
+We can deploy a demo site using nginx and request a valid certificate from Let's Encrypt to verify that we can successfully obtain a valid TLS certificate from Let's Encrypt. Copy and paste the following manifest in a file called `demosite.yml`:
 
 ```yml
 ---
@@ -417,13 +420,17 @@ spec:
     secretName: k3s-maxdon-tech-tls         # Match the name of the secret that contains the certificate
 ```
 
-Now let's create all the resources in the cluster using our friend kubeclt as follows:
+{{<alert cardColor="#e63946" iconColor="#1d3557" icon="fire">}}
+Make sure you replace the host **k3s.maxdon.tech** with your domain.
+{{</alert>}}
+
+Now let's create all the resources in the cluster using our friend kubectl as follows:
 
 ```sh
 kubectl apply -f demosite.yml
 ```
 
-After few minutes, you should be able to see a certificate in the demo-site namespace uwing the following command:
+After a few minutes, you should be able to see a certificate in the demo-site namespace using the following command:
 
 ```sh
 kubectl get certificate -n demo-site
@@ -439,14 +446,14 @@ kubectl delete -f demosite.yml
 
 ## Conclusion
 
-This was quite a lengthy post, but cert-manager makes it really easy for us to configure and automate certificate management. cert-manager doesn't support all the domain registrar so if you still have to buy a domain and want to use cert-manager, make sure that you're buying it from one of the supported ones.
+This was quite a lengthy post, but cert-manager makes it really easy for us to configure and automate certificate management. Beware that cert-manager doesn't support all the domain registrar so if you still have to buy a domain and want to use cert-manager, make sure that you're buying it from one of the supported ones.
 
-Just to recap, in order to expose a service with it's relative TLS certificate we need to:
+Just to recap, to expose a service with its related TLS certificate we need to:
 
 1. Create a certificate resource to instruct cert-manager to request a certificate for us
-1. Instruct Traefik which certificate to use, specifying the same secret name used in the certificate resource
+1. Instruct Traefik on which certificate to use, specifying the same secret name used in the certificate resource
 
-At this point we implemented all the features from the first post:
+At this point, we achieved all the goals from the first post:
 
 - Multinode k8s Cluster {{<iconc "check" "green">}}
 - Do not expose any internal service to the internet {{<iconc "check" "green">}}
@@ -455,4 +462,4 @@ At this point we implemented all the features from the first post:
 
 Pretty easy no?
 
-In the next article we will look at automating the DNS records management that is still a manual process as of now, so stay tuned for th next one!
+In the next article we will look at automating the DNS records management that is still a manual process as of now, so stay tuned for the next one!
