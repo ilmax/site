@@ -216,10 +216,35 @@ resource "azurerm_resource_provider_registration" "github_resource_provider" {
 }
 
 resource "azurerm_resource_group" "resource_group" {
-  location = "West Europe"
+  location = "North Europe"
   name     = "My-Rg"
 }
 
+resource "azurerm_virtual_network" "vnet" {
+  name                = "My-vnet"
+  location            = azurerm_resource_group.resource_group.location
+  resource_group_name = azurerm_resource_group.resource_group.name
+  address_space       = "10.0.0.0/8"
+}
+
+resource "azurerm_subnet" "runner_subnet" {
+  name                 = "My-runner-subnet"
+  resource_group_name  = azurerm_resource_group.resource_group.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+
+  address_prefixes = "10.0.1.0/24"
+
+  delegation {
+    name = "delegation"
+
+    service_delegation {
+      name    = "GitHub.Network/networkSettings"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
+    }
+  }
+}
+
+# Create the GitHub Network settings
 resource "azapi_resource" "github_network_settings" {
   type                      = "GitHub.Network/networkSettings@2024-04-02"
   name                      = "github_network_settings_resource"            # The name of the networksettings
@@ -244,6 +269,8 @@ output "github_network_settings_id" {
     value = jsondecode(azapi_resource.github_network_settings.output).gitHubId.value
 }
 ```
+
+> You can find the whole source code at the end of the article in the [references](#references) section
 
 ### GitHub configuration
 
