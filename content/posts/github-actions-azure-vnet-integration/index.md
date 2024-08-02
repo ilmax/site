@@ -97,14 +97,14 @@ If you need to connect to PaaS services for which the Private Endpoint NICs are 
 To be able to resolve the hostname to the private IP of the NIC created by the Private Endpoints, we need to make sure that the private DNS Zone is linked to all the VNETs that have to connect to the PaaS service.
 
 {{<alert>}}
-Bear in mind that network peering is not transitive, so if you need to traverse several networks, you need to configure an NVA that knows how to route traffic
+Bear in mind that network peering is not transitive, so if you need to traverse several networks, you need to configure an network virtual appliance (NVA) that knows how to route traffic
 {{</alert>}}
 
-All three components briefly described above are used to configure private access to PaaS services and GitHub-hosted runners can take advantage of this infrastructure, let's see how here below.
+All three components briefly described above are used to configure private access to PaaS services and GitHub-hosted runners can take advantage of this infrastructure. Let's see how below.
 
 ## Configuration
 
-To get this configured we need to configure the networking in Azure, create the hosted network configuration in GitHub, create runner groups and runners in GitHub and, last step, we can change the workflow's `runs-on` to specify the new runner name, let see how to do this in detail
+To get this configured we need to configure the networking in Azure, create the hosted network configuration in GitHub, create runner groups and runners in GitHub and, last step, we can change the workflow's `runs-on` to specify the new runner name, let see how to do this in detail.
 
 ### Azure configuration
 
@@ -136,14 +136,14 @@ As of today (July 2024) the only supported regions are:
 
 If your VNET that contains the Private Endpoints is not in any of those regions, you have to create a new VNET and use Regional VNET Peerings. If you use a HUB/Spoke network topology, you may want to create a dedicated spoke that will host the GitHub NICs.
 
-When you have multiple spokes that need to communicate, you can either peer them together, configure traffic routing through an NVA or connect them through a VPN gateway. please refer to the [documentation](https://learn.microsoft.com/en-us/azure/architecture/networking/guide/spoke-to-spoke-networking) on how to achieve that.
+When you have multiple spokes that need to communicate, you can either peer them together, configure traffic routing through an NVA or connect them through a VPN gateway. Please refer to the [documentation](https://learn.microsoft.com/en-us/azure/architecture/networking/guide/spoke-to-spoke-networking) on how to achieve that.
 
 In my case, I went with the easy option to use network peering between the two spoke VNETs.
 
 After the networking part has been taken care of, we need to:
 
 1. Register a new resource provider
-1. Create a new resource of type GitHub.Network/netowkrSettings
+1. Create a new resource of type GitHub.Network/networkSettings
 1. Copy the tag.GithubId output
 
 Register the resource provider can be done in several ways, via Terraform (see [below](#creating-the-github-network-setting-resource)) or via az cli running the following command:
@@ -171,7 +171,7 @@ https://api.github.com/graphql
 ```
 
 {{<alert icon="lightbulb" cardColor="#097969" iconColor="#AFE1AF" textColor="#f1faee">}}
-**TIP**: The documentation for configuring the private networking for GitHub-hosted runners in your enterprise can be found [here](https://docs.github.com/en/enterprise-cloud@latest/admin/configuring-settings/configuring-private-networking-for-hosted-compute-products/configuring-private-networking-for-github-hosted-runners-in-your-enterprise)
+**TIP**: The documentation for configuring the private networking for GitHub-hosted runners in your **Enterprise** can be found [here](https://docs.github.com/en/enterprise-cloud@latest/admin/configuring-settings/configuring-private-networking-for-hosted-compute-products/configuring-private-networking-for-github-hosted-runners-in-your-enterprise)
 {{</alert>}}
 
 
@@ -188,12 +188,12 @@ https://api.github.com/graphql
 ```
 
 {{<alert icon="lightbulb" cardColor="#097969" iconColor="#AFE1AF" textColor="#f1faee">}}
-**TIP**: The documentation for configuring private networking for GitHub-hosted runners in your organization can be found [here](https://docs.github.com/en/organizations/managing-organization-settings/configuring-private-networking-for-github-hosted-runners-in-your-organization)
+**TIP**: The documentation for configuring private networking for GitHub-hosted runners in your **Organization** can be found [here](https://docs.github.com/en/organizations/managing-organization-settings/configuring-private-networking-for-github-hosted-runners-in-your-organization)
 {{</alert>}}
 
 ### Creating the GitHub network setting resource
 
-Here's the terraform code to create the GitHub network settings resource:
+Here's the Terraform code to create the GitHub network settings resource:
 
 ```hcl
 terraform {
@@ -312,7 +312,7 @@ Now that we have configured everything, we can change the `runs-on` label on a w
 
 Thanks to GitHub private networking for hosted runners, we can ensure our CI/CD pipeline works seamlessly even when we deny public access to the PaaS services we use, allowing us to enhance the security posture of our Azure Subscription.
 
-In this repository, I have a simple terraform configuration where I deploy an Azure Storage Account, disable Public Access, and create the Private Endpoints for blob and tables within a VNET. In another VNET I have configured the GitHub network settings, the output of such configuration is the token that you can input in GitHub when creating the Hosted Compute Networking configuration.
+In this repository, I have a simple Terraform configuration where I deploy an Azure Storage Account, disable Public Access, and create the Private Endpoints for blob and tables within a VNET. In another VNET I have configured the GitHub network settings, the output of such configuration is the token that you can input in GitHub when creating the Hosted Compute Networking configuration.
 
 I hope you enjoyed this article, if you have some questions, don't hesitate to reach out.
 Till the next time!
