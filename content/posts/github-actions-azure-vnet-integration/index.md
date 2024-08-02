@@ -17,14 +17,16 @@ This is all good and well, but what about those services that aren't deployed in
 
 Chances are that you interact with your infrastructure in CI/CD pipelines (like for example running `terraform apply`) and, as soon as you close the firewall, some operations will start to fail.
 
-At this point, we have several ways of fixing the issue, here's a quick non-exhaustive list off top of my head:
+At this point, we have several ways of fixing the issue, here's a quick non-exhaustive list off the top of my head:
 
 - Open and close the PaaS Service public access when the pipeline starts and revert the operation at the end
 - Allow access to the PaaS Services from within your office network and self-host your runners within your office network
 - Self-host your runners in Azure Virtual Machines with network connectivity to those services
 
 All the options in the above list will fix the issue but they all have some disadvantages, so can we do better?
- Not long ago, we got a new (and IMO better) alternative which is to take advantage of GitHub private networking for hosted runners.
+Not long ago, we got a new (and IMO better) alternative which is to take advantage of GitHub private networking for hosted runners.
+
+{{<figure src="github_private_vnet.webp" alt="GitHub private networking inner workings" caption="*GitHub private networking inner workings, image courtesy of https://docs.github.com/en/organizations/managing-organization-settings/about-azure-private-networking-for-github-hosted-runners-in-your-organization*" nozoom=true >}}
 
 ## GitHub private networking with GitHub-hosted runners
 
@@ -43,15 +45,17 @@ To set this up we need to configure a few things:
 
 Let's now take a look into a few concepts that are necessary for understanding how this can be configured.
 
+{{<figure src="private_endpoint.png" alt="Azure Private Link overview" caption="*Azure Private Link overview, image courtesy of https://azure.microsoft.com/en-us/products/private-link/*" nozoom=true >}}
+
 ### Private Endpoints
 
-Private Endpoints can be thought of as read-only Network Interface Cards (NICs) for your PaaS services. Those NICs are created in the subnet you specify and are assigned a private IP from the subnet address space.
+Private Endpoints can be thought of as read-only Network Interface Cards (NICs) for your PaaS services. Those NICs are created in the subnet you specify and are assigned a private IP from the VNET address space. The connection between the private endpoint and the PaaS service uses a secure private link.
 
 When using Private Endpoints, the traffic never leaves the Microsoft backbone network as opposed to going through the public internet, making it not only more secure but also a faster way to access your PaaS services.
 
 ### Private DNS Zones
 
-When a PaaS service enables the Private Endpoints, at the DNS level the service FQDN turns into a CNAME to the privatelink zone for the storage account, let's see the changes in resolving the storage account hostname with the `dig` command (in Linux/MacOS, use `dig` on WSL or `nslookup` when using windows):
+When a PaaS service enables the Private Endpoints, at the DNS level the service FQDN turns into a CNAME to the private link zone for the storage account, let's see the changes in resolving the storage account hostname with the `dig` command (available in Linux and MacOS, when using Windows you can use `dig` on WSL or `nslookup` on cmd/PowerShell)
 
 No Private Endpoints
 
@@ -77,10 +81,12 @@ blob.am5prdstr12a.store.core.windows.net. 60 IN A 1.2.3.5
 As you can see above, after we turn on Private Endpoints for a particular service, we get another DNS indirection. This coincides with the name of the Private DNS Zone in which we have to create our records.
 
 {{<alert icon="lightbulb" cardColor="#097969" iconColor="#AFE1AF" textColor="#f1faee">}}
-**TIP:** Different services have different DNS Zones and those are mentioned in the documentation [here](https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns).
+**TIP:** You can read more about how this works in the Microsoft [documentation](https://learn.microsoft.com/en-us/azure/storage/common/storage-private-endpoints#dns-changes-for-private-endpoints).
+
+Different services have different DNS Zones and those are mentioned in the documentation [here](https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns).
 {{</alert>}}
 
-An A record is then created in the respective Private DNS Zone that resolves to the IP of the NIC. Private Link service then allows you to connect the NIC to the PaaS service over Microsoft's backbone network.
+An A record is then created in the respective Private DNS Zone that resolves to the IP of the NIC that represents your PaaS service.
 
 Private Endpoint can be linked to one or more Private DNS Zones to make sure that whenever the IP of the NIC connected to the Private Endpoint changes, the DNS record(s) are automatically updated by the platform for us.
 
@@ -106,6 +112,8 @@ In Azure, you have to decide in which VNET the GitHub-hosted runner NICs will be
 
 As of today (July 2024) the only supported regions are:
 
+<div style="column-count: 2">
+
 - EastUs
 - EastUs2
 - WestUs2
@@ -124,6 +132,8 @@ As of today (July 2024) the only supported regions are:
 - UkSouth
 - SoutheastAsia
 
+</div>
+
 If your VNET that contains the Private Endpoints is not in any of those regions, you have to create a new VNET and use Regional VNET Peerings. If you use a HUB/Spoke network topology, you may want to create a dedicated spoke that will host the GitHub NICs.
 
 When you have multiple spokes that need to communicate, you can either peer them together, configure traffic routing through an NVA or connect them through a VPN gateway. please refer to the [documentation](https://learn.microsoft.com/en-us/azure/architecture/networking/guide/spoke-to-spoke-networking) on how to achieve that.
@@ -136,7 +146,7 @@ After the networking part has been taken care of, we need to:
 1. Create a new resource of type GitHub.Network/netowkrSettings
 1. Copy the tag.GithubId output
 
-Register the resource provider can be done in several ways, via az cli for example running the following command:
+Register the resource provider can be done in several ways, via Terraform (see [below](#creating-the-github-network-setting-resource)) or via az cli running the following command:
 
 ```sh
 az provider register --namespace GitHub.Network
@@ -146,7 +156,7 @@ In GitHub, depending on whether you have an Enterprise Cloud or Team Plan, you c
 
 The GitHub network settings need to know about your Enterprise/Organization so, before creating the network settings resource in Azure, we need to get a hold of the Enterprise ID/Organization ID from GitHub. As far as I know, this is not displayed anywhere in the UI so we need to execute a GraphQL API call as shown below:
 
-### Enterprise Configuration
+### Retrieving the Enterprise ID
 
 We get the organization ID via the following GraphQL call, before the call we also need to generate a personal access token with the required grants.
 
@@ -164,13 +174,8 @@ https://api.github.com/graphql
 **TIP**: The documentation for configuring the private networking for GitHub-hosted runners in your enterprise can be found [here](https://docs.github.com/en/enterprise-cloud@latest/admin/configuring-settings/configuring-private-networking-for-hosted-compute-products/configuring-private-networking-for-github-hosted-runners-in-your-enterprise)
 {{</alert>}}
 
-Here's the terraform code to create the GitHub network settings resource:
 
-```hcl
-```
-// TODO Add terraform code
-
-### Organization Configuration
+### Retrieving the Organization ID
 
 ```sh
 curl -H "Authorization: Bearer BEARER_TOKEN" -X POST \
@@ -186,9 +191,59 @@ https://api.github.com/graphql
 **TIP**: The documentation for configuring private networking for GitHub-hosted runners in your organization can be found [here](https://docs.github.com/en/organizations/managing-organization-settings/configuring-private-networking-for-github-hosted-runners-in-your-organization)
 {{</alert>}}
 
+### Creating the GitHub network setting resource
+
+Here's the terraform code to create the GitHub network settings resource:
+
 ```hcl
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = ">3.0.0"
+    }
+
+    azapi = {
+      source  = "Azure/azapi"
+      version = "~> 1.14.0"
+    }
+  }
+}
+
+# Register the GitHub.Network resource provider
+resource "azurerm_resource_provider_registration" "github_resource_provider" {
+  name = "GitHub.Network"
+}
+
+resource "azurerm_resource_group" "resource_group" {
+  location = "West Europe"
+  name     = "My-Rg"
+}
+
+resource "azapi_resource" "github_network_settings" {
+  type                      = "GitHub.Network/networkSettings@2024-04-02"
+  name                      = "github_network_settings_resource"            # The name of the networksettings
+  location                  = "West Europe"                                 # The region in which the networksetting resource will be created
+  parent_id                 = azurerm_resource_group.resource_group.id      # Parent Id that should point to the ID of the resource group
+  schema_validation_enabled = false
+  body = jsonencode({
+    properties = {
+      businessId = var.github_business_id                                   # GitHub EnterpriseID or Organization ID based on Enterprise vs Organization level configuration
+      subnetId   = azurerm_subnet.runner_subnet.id                          # ID of the subnet where the NICs will be injected
+    }
+  })
+  response_export_values = ["tags.GitHubId"]                                # Export the tags.GitHubId
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}
+
+output "github_network_settings_id" {
+    description = "ID of the GitHub.Network/networkSettings resource"
+    value = jsondecode(azapi_resource.github_network_settings.output).gitHubId.value
+}
 ```
-// TODO Add terraform code
 
 ### GitHub configuration
 
@@ -199,6 +254,8 @@ I decided to create the Hosted Compute Networking configurations at the Organiza
 1. Add a name to the configuration and then click on the _Add Azure Virtual Network_ button
 1. Paste the ID outputted by Terraform while creating the GitHub Network settings resource
 1. Save the configuration
+
+{{<figure src="network_settings.jpg" alt="GitHub network setting configuration dialog" caption="*GitHub network setting configuration dialog, image courtesy of https://github.com/garnertb/github-runner-vnet*" nozoom=true >}}
 
 After the network configuration is created, we have to create a Runner Group that uses the network configuration just created.
 
@@ -219,9 +276,10 @@ Now that we have configured everything, we can change the `runs-on` label on a w
 
 ## References
 
-- https://www.youtube.com/watch?v=57ZwdztCx2w&ab_channel=JohnSavill%27sTechnicalTraining
-- https://docs.github.com/en/organizations/managing-organization-settings/about-azure-private-networking-for-github-hosted-runners-in-your-organization
-- https://docs.github.com/en/enterprise-cloud@latest/admin/configuring-settings/configuring-private-networking-for-hosted-compute-products/configuring-private-networking-for-github-hosted-runners-in-your-enterprise
+- <https://www.youtube.com/watch?v=57ZwdztCx2w&ab_channel=JohnSavill%27sTechnicalTraining>
+- <https://docs.github.com/en/organizations/managing-organization-settings/about-azure-private-networking-for-github-hosted-runners-in-your-organization>
+- <https://docs.github.com/en/enterprise-cloud@latest/admin/configuring-settings/configuring-private-networking-for-hosted-compute-products/configuring-private-networking-for-github-hosted-runners-in-your-enterprise>
+- <https://github.com/garnertb/github-runner-vnet>
 
 ## Conclusion
 
