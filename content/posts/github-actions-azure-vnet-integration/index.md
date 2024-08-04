@@ -1,7 +1,7 @@
 ---
 title: "Github Actions Azure Vnet Integration"
 date: 2024-07-24T14:26:00+02:00
-draft: true
+draft: false
 tags: ["github", "azure", "devops", "terraform"]
 ---
 
