@@ -301,6 +301,18 @@ After the Runner Group has been created, it's now time to create a runner (or mo
 
 Now that we have configured everything, we can change the `runs-on` label on a workflow with the name of one of the runners created above and it will use the new runner that has VNET connectivity with our PaaS service.
 
+```yml
+name: Sample workflow
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    name: Build
+    runs-on: azure-vnet-runner # Use the name of the runner just created
+```
+
 ## References
 
 - <https://www.youtube.com/watch?v=57ZwdztCx2w&ab_channel=JohnSavill%27sTechnicalTraining>
