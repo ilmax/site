@@ -2,13 +2,21 @@ name: Deploy Hugo site via GitHub Pages
 
 on:
   push:
-    branches:
-      - main # Set a branch to deploy
+    branches: [$default-branch]
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write  
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
 jobs:
-  deploy:
+  build:
     env:
       HUGO_ENV: production
     runs-on: ubuntu-latest
@@ -18,6 +26,10 @@ jobs:
           submodules: recursive # Fetch Hugo themes (true OR recursive)
           fetch-depth: 0 # Fetch all history for .GitInfo and .Lastmod
 
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v3
         with:
@@ -25,16 +37,23 @@ jobs:
           extended: true
 
       - name: Build
-        run: hugo --minify
+        run: hugo --minify --baseURL ${{ vars.BaseUrl }}
 
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
-        if: github.ref == 'refs/heads/main'
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          personal_token: ${{ secrets.PAT }}
-          external_repository: ilmax/ilmax.github.io
-          publish_dir: ./public
-          user_name: 'github-actions'
-          user_email: 'github-actions[bot]@users.noreply.github.com'
-          full_commit_message: ${{ github.event.head_commit.message }}
-          publish_branch: main
+          path: ./public
+
+  # Deployment job
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
