@@ -1,0 +1,57 @@
+name: "Compress Images"
+description: "Compress all images from the provided directory"
+author: "Clyde D'Souza & Massimiliano Donini"
+
+inputs:
+  jpg-compression-quality:
+    required: false
+    description: "Set the level of compression for JPG image files"
+    default: 85
+
+  png-compression-quality:
+    required: false
+    description: "Set the level of compression for PNG image files"
+    default: 0.85
+
+  webp-compression-quality:
+    required: false
+    description: "Set the level of compression for WEBP image files"
+    default: 85
+
+outputs:
+  has-changes:
+    description: "Indicates whether or not images have been changed"
+    value: ${{ steps.changed-files.outputs.any_changed }}    
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install required npm packages
+      shell: bash
+      run: |
+        npm install imagemin-cli imagemin-mozjpeg imagemin-pngquant imagemin-webp --global --loglevel error
+
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v44
+      with:
+        files: |
+          **.jpg
+          **.jpeg
+          **.png
+          **.webp
+
+    - name: Run image compression
+      if: steps.changed-files.outputs.any_changed == 'true'
+      env:
+        ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+      shell: bash
+      run: |
+        for file in ${ALL_CHANGED_FILES}; do
+          echo compressing image $file 
+          cat $file | imagemin \
+            --plugin.mozjpeg.quality=${{ inputs.jpg-compression-quality }} \
+            --plugin.pngquant.quality=${{ inputs.png-compression-quality }} \
+            --plugin.webp.quality=${{ inputs.webp-compression-quality }} \
+            > $file
+        done

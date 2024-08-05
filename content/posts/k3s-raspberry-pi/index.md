@@ -110,7 +110,7 @@ The first node that we will install is the master node, I'm calling this out bec
 
 1. Prepare the K3s kubelet configuration file in `/etc/rancher/k3s/kubelet.config`
 
-    ```yaml
+    ```yml
     kubeconfig=/etc/rancher/k3s/kubelet.config
     sudo mkdir -p $(dirname $kubeconfig)
     sudo tee $kubeconfig >/dev/null <<EOF
@@ -356,7 +356,7 @@ Anyway let's see how to install and configure Traefik:
 1. Run the following command to install Traefik:
 
     ```sh
-    helm install --namespace=traefik traefik traefik/traefik --values=traefikvalues.yaml --create-namespace
+    helm install --namespace=traefik traefik traefik/traefik --values=traefikvalues.yml --create-namespace
     ```
 
 ### Verify Traefik installation

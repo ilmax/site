@@ -1,22 +1,26 @@
-# name: Optimize images
-# on:
-#   pull_request:
-#     paths:
-#       - '**.jpg'
-#       - '**.jpeg'
-#       - '**.png'
-#       - '**.webp'
-# jobs:
-#   build:
-#     name: calibreapp/image-actions
-#     permissions: write-all
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout Repo
-#         uses: actions/checkout@v4
+name: Optimize images
+on:
+  pull_request:
+    types:
+      - closed
+jobs:
+  build:
+    if: github.event.pull_request.merged == true
+    name: Optimize actions
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
 
-#       - name: Compress Images
-#         uses: calibreapp/image-actions@main
-#         with:
-#           githubToken: ${{ secrets.GITHUB_TOKEN }}
-            
+      - name: Optimize images
+        id: optimize-images
+        uses: ./.github/optimize-images
+
+      - name: Create Pull Request
+        if: ${{ steps.optimize-images.outputs.has-changes }}
+        uses: peter-evans/create-pull-request@v6
+        with:
+          base: main
