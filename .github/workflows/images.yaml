@@ -6,7 +6,7 @@ on:
 jobs:
   build:
     if: github.event.pull_request.merged == true
-    name: Optimize actions
+    name: Optimize images
     permissions:
       contents: write
       pull-requests: write
