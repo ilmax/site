@@ -1,11 +1,11 @@
 name: Optimize images
 on:
   pull_request:
-    # types:
-    #   - closed
+    types:
+      - closed
 jobs:
   build:
-    # if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged == true
     name: Optimize actions
     permissions:
       contents: write

@@ -9,13 +9,13 @@ In today's post, we will look at an interesting challenge, having GitHub actions
 
 ## Problem Statement
 
-If you are working on improving your cloud security posture on Azure, one of the first things that you should look into when deploying PaaS services in Azure (like for example Azure Storage, Azure Cosmos DB or Azure SQL Server) is to disable the public access.
+If you are working on improving your cloud security posture on Azure, one of the first things that you should look into when deploying PaaS services (like for example Azure Storage, Azure Cosmos DB or Azure SQL Server) is to disable the public access.
 
-Most PaaS services nowadays allow you to disable public access, meaning that you can't connect to those services over the Internet anymore. For the services deployed in Azure, you can take advantage of Virtual Networks, Private Endpoints and Private DNS Zones to enable private connectivity without changing any single line of code.
+Most PaaS services nowadays allow you to disable public access, meaning that you can't connect to those services over the Internet anymore. For the applications deployed in Azure, you can take advantage of Virtual Networks, Private Endpoints and Private DNS Zones to enable private connectivity without changing any single line of code.
 
-This is all good and well, but what about those services that aren't deployed in Azure, like for example the CI/CD runners?
+This is all well and good, but what about those services that aren't deployed in Azure, like for example the CI/CD runners?
 
-Chances are that you interact with your infrastructure in CI/CD pipelines (like for example running `terraform apply`) and, as soon as you close the firewall, some operations will start to fail.
+Chances are that you interact with your infrastructure in CI/CD pipelines (like for example running `terraform apply`) and, as soon as you close the firewall, some operations will start to fail due to connectivity problems.
 
 At this point, we have several ways of fixing the issue, here's a quick non-exhaustive list off the top of my head:
 
@@ -24,13 +24,13 @@ At this point, we have several ways of fixing the issue, here's a quick non-exha
 - Self-host your runners in Azure Virtual Machines with network connectivity to those services
 
 All the options in the above list will fix the issue but they all have some disadvantages, so can we do better?
-Not long ago, we got a new (and IMO better) alternative which is to take advantage of GitHub private networking for hosted runners.
+Not long ago, we got a new and better alternative which is to take advantage of GitHub private networking for hosted runners.
 
 {{<figure src="github_private_vnet.webp" alt="GitHub private networking inner workings" caption="*GitHub private networking inner workings, image courtesy of https://docs.github.com/en/organizations/managing-organization-settings/about-azure-private-networking-for-github-hosted-runners-in-your-organization*" nozoom=true >}}
 
 ## GitHub private networking with GitHub-hosted runners
 
-This relatively new feature, allows GitHub-hosted runners to use a network interface card (NIC) created in a subnet under your control. This way we don't have to manage our own hosted runners, GitHub will keep managing the runners for us, while we will still be able to connect to PaaS service using private connectivity.
+This relatively new feature (Public beta started in November 2023 and went GA in April 2024), allows GitHub-hosted runners to use a network interface card (NIC) created in a subnet under your control. This way we don't have to manage our own hosted runners, GitHub will keep managing the runners for us, while we will still be able to connect to PaaS service using private connectivity.
 
 To set this up we need to configure a few things:
 
@@ -40,6 +40,10 @@ To set this up we need to configure a few things:
 1. Create a Hosted Computed Network configuration in GitHub
 1. Create Runner Group(s) and Runner(s) on GitHub
 1. Change your GitHub action `runs-on` to reference the runner
+
+{{<alert cardColor="#e63946" iconColor="#1d3557" icon="fire">}}
+WARN: This functionality is only supported by **GitHub Enterprise** and **GitHub Team** plans
+{{</alert>}}
 
 ## Azure Private connectivity
 
@@ -55,7 +59,8 @@ When using Private Endpoints, the traffic never leaves the Microsoft backbone ne
 
 ### Private DNS Zones
 
-When a PaaS service enables the Private Endpoints, at the DNS level the service FQDN turns into a CNAME to the private link zone for the storage account, let's see the changes in resolving the storage account hostname with the `dig` command (available in Linux and MacOS, when using Windows you can use `dig` on WSL or `nslookup` on cmd/PowerShell)
+When a PaaS service enables the Private Endpoints, at the DNS level the service FQDN turns into a CNAME to the private link zone for the related service.
+Let's see the changes in resolving an Azure Storage Account hostname with the `dig` command (available in Linux and MacOS, when using Windows you can use `dig` on WSL or `nslookup` on cmd/PowerShell)
 
 No Private Endpoints
 
@@ -78,7 +83,7 @@ examplepe.privatelink.blob.core.windows.net. 60 IN CNAME blob.am5prdstr12a.store
 blob.am5prdstr12a.store.core.windows.net. 60 IN A 1.2.3.5
 ```
 
-As you can see above, after we turn on Private Endpoints for a particular service, we get another DNS indirection. This coincides with the name of the Private DNS Zone in which we have to create our records.
+As you can see above, after we turn on Private Endpoints for a particular service, we get another DNS indirection. This zone coincides with the name of the Private DNS Zone in which we have to create our records to enable private connectivity.
 
 {{<alert icon="lightbulb" cardColor="#097969" iconColor="#AFE1AF" textColor="#f1faee">}}
 **TIP:** You can read more about how this works in the Microsoft [documentation](https://learn.microsoft.com/en-us/azure/storage/common/storage-private-endpoints#dns-changes-for-private-endpoints).
@@ -92,7 +97,7 @@ Private Endpoint can be linked to one or more Private DNS Zones to make sure tha
 
 ### VNET Peering
 
-If you need to connect to PaaS services for which the Private Endpoint NICs are assigned to a different VNET subnet, you can take advantage of network peering and you should be able to communicate without any problems. VNET Peering can peer networks that are in the same and different regions as well.
+If you need to connect to PaaS services via Private Endpoint from a different VNET than the one whenre the Private Endpoint NICs lives, you can take advantage of network peering and you should be able to communicate without any problems. VNET Peering is very flexible and can peer networks that are in the same regions as well as different region, subscription or even tenant.
 
 To be able to resolve the hostname to the private IP of the NIC created by the Private Endpoints, we need to make sure that the private DNS Zone is linked to all the VNETs that have to connect to the PaaS service.
 
@@ -104,11 +109,11 @@ All three components briefly described above are used to configure private acces
 
 ## Configuration
 
-To get this configured we need to configure the networking in Azure, create the hosted network configuration in GitHub, create runner groups and runners in GitHub and, last step, we can change the workflow's `runs-on` to specify the new runner name, let see how to do this in detail.
+To get this working we need to configure the networking in Azure, create the hosted network configuration in GitHub, create runner groups and runners in GitHub and, as the last step, we can change the workflow's `runs-on` to specify the new runner name, let see how to do this in detail.
 
 ### Azure configuration
 
-In Azure, you have to decide in which VNET the GitHub-hosted runner NICs will be created. You can use the same network where the private endpoint for your PaaS services lives or create another VNET to keep things separate, this decision is up to you and depends on your networking configuration. What's worth noting is that just a subset of Azure regions are supported, so you may be forced to create a VNET in a region different from the VNET that contains your Private Endpoints.
+In Azure, you have to decide in which VNET the GitHub-hosted runner NICs will be created. You can use the same network where the private endpoint for your PaaS services lives or create another VNET to keep things separate, this decision is up to you and depends on your networking configuration/requirements. What's worth noting is that just a subset of Azure regions are supported, so you may be forced to create a VNET in a region different from the VNET that contains your Private Endpoints.
 
 As of today (July 2024) the only supported regions are:
 
@@ -134,7 +139,7 @@ As of today (July 2024) the only supported regions are:
 
 </div>
 
-If your VNET that contains the Private Endpoints is not in any of those regions, you have to create a new VNET and use Regional VNET Peerings. If you use a HUB/Spoke network topology, you may want to create a dedicated spoke that will host the GitHub NICs.
+If the VNET which contains the Private Endpoints is not in any of those regions, you have to create a new VNET and use Regional VNET Peerings or create another set of Private Endpoints in the designed VNET. If you use a HUB/Spoke network topology, you may want to create a dedicated spoke that will host the GitHub NICs.
 
 When you have multiple spokes that need to communicate, you can either peer them together, configure traffic routing through an NVA or connect them through a VPN gateway. Please refer to the [documentation](https://learn.microsoft.com/en-us/azure/architecture/networking/guide/spoke-to-spoke-networking) on how to achieve that.
 
