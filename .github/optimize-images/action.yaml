@@ -53,5 +53,8 @@ runs:
             --plugin.mozjpeg.quality=${{ inputs.jpg-compression-quality }} \
             --plugin.pngquant.quality=${{ inputs.png-compression-quality }} \
             --plugin.webp.quality=${{ inputs.webp-compression-quality }} \
-            > $file
+            > $file.new
+
+          rm $file
+          mv $file.new $file
         done
