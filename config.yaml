@@ -37,10 +37,10 @@ params:
     icon: solid
     buttonMargin: 0.2em
   giscus:
-    repo: ilmax/ilmax.github.io
-    repoID: R_kgDOI1C2VQ
-    category: Comments
-    categoryID: DIC_kwDOI1C2Vc4CTw93
+    repo: ilmax/site
+    repoID: R_kgDOIvGqCw
+    category: 'Post Comments'
+    categoryID: DIC_kwDOIvGqC84CTeD0
     mapping: pathname
     strict: 1
     reactionsEnabled: '1'
