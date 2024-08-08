@@ -16,8 +16,8 @@ Thank you for visiting my website. I hope you find the content here helpful and 
 
 ## Azure certifications
 
-{{< figure src="microsoft-certified-associate-badge.svg" alt="Microsoft Certified: Azure Administrator Associate" caption="Microsoft Certified: Azure Administrator Associate" nozoom=true href="https://learn.microsoft.com/api/credentials/share/en-us/MassimilianoDonini-8826/69128BD39674C830?sharingId=97EA7DE09241D00" class="grid-w33" >}}
+{{< figure src="microsoft-certified-associate-badge.svg" alt="AZ-104 Microsoft Certified: Azure Administrator Associate" caption="**AZ-104**  Microsoft Certified: Azure Administrator Associate" nozoom=true href="https://learn.microsoft.com/api/credentials/share/en-us/MassimilianoDonini-8826/69128BD39674C830?sharingId=97EA7DE09241D00" class="grid-w33" >}}
 
-{{< figure src="microsoft-certified-associate-badge.svg" alt="Microsoft Certified: Azure Developer Associate" caption="Microsoft Certified: Azure Developer Associate" nozoom=true href="https://learn.microsoft.com/api/credentials/share/en-us/MassimilianoDonini-8826/929DFBD4F46CE79A?sharingId=97EA7DE09241D00" class="grid-w33" >}}
+{{< figure src="microsoft-certified-associate-badge.svg" alt="AZ-204 Microsoft Certified: Azure Developer Associate" caption="**AZ-204** Microsoft Certified: Azure Developer Associate" nozoom=true href="https://learn.microsoft.com/api/credentials/share/en-us/MassimilianoDonini-8826/929DFBD4F46CE79A?sharingId=97EA7DE09241D00" class="grid-w33" >}}
 
-{{< figure src="microsoft-certified-expert-badge.svg" alt="Microsoft Certified: Azure Solutions Architect Expert" caption="Microsoft Certified: Azure Solutions Architect Expert" nozoom=true href="https://learn.microsoft.com/api/credentials/share/en-us/MassimilianoDonini-8826/90D4496CCEDC49D9?sharingId=97EA7DE09241D00" class="grid-w33" >}}
+{{< figure src="microsoft-certified-expert-badge.svg" alt="AZ-305 Microsoft Certified: Azure Solutions Architect Expert" caption="**AZ-305** Microsoft Certified: Azure Solutions Architect Expert" nozoom=true href="https://learn.microsoft.com/api/credentials/share/en-us/MassimilianoDonini-8826/90D4496CCEDC49D9?sharingId=97EA7DE09241D00" class="grid-w33" >}}

@@ -18,7 +18,7 @@ menu:
 params:
   favicon: /favicon.ico
   author: Massimiliano Donini
-  description: My adventures in Tech
+  description: Yet another blog about software development, cloud computing, and other tech topics.
   menu_item_separator: ' | '
   showCodeCopyButtons: true
   style:

@@ -28,7 +28,7 @@ Not long ago, we got a new and better alternative which is to take advantage of 
 
 {{<figure src="github_private_vnet.webp" alt="GitHub private networking inner workings" caption="*GitHub private networking inner workings, image courtesy of https://docs.github.com/en/organizations/managing-organization-settings/about-azure-private-networking-for-github-hosted-runners-in-your-organization*" nozoom=true >}}
 
-## GitHub private networking with GitHub-hosted runners
+## GitHub private networking
 
 This relatively new feature (Public beta started in November 2023 and went GA in April 2024), allows GitHub-hosted runners to use a network interface card (NIC) created in a subnet under your control. This way we don't have to manage our own hosted runners, GitHub will keep managing the runners for us, while we will still be able to connect to PaaS service using private connectivity.
 
@@ -45,7 +45,7 @@ To set this up we need to configure a few things:
 WARN: This functionality is only supported by **GitHub Enterprise** and **GitHub Team** plans
 {{</alert>}}
 
-## Azure Private connectivity
+## Azure private connectivity
 
 Let's now take a look into a few concepts that are necessary for understanding how this can be configured.
 
@@ -139,7 +139,7 @@ As of today (July 2024) the only supported regions are:
 
 </div>
 
-If the VNET which contains the Private Endpoints is not in any of those regions, you have to create a new VNET and use Regional VNET Peerings or create another set of Private Endpoints in the designed VNET. If you use a HUB/Spoke network topology, you may want to create a dedicated spoke that will host the GitHub NICs.
+If the VNET that contains the Private Endpoints is not in any of those regions, you have to create a new VNET and use Regional VNET Peerings or create another set of Private Endpoints in the designed VNET. If you use a HUB/Spoke network topology, you may want to create a dedicated spoke that will host the GitHub NICs.
 
 When you have multiple spokes that need to communicate, you can either peer them together, configure traffic routing through an NVA or connect them through a VPN gateway. Please refer to the [documentation](https://learn.microsoft.com/en-us/azure/architecture/networking/guide/spoke-to-spoke-networking) on how to achieve that.
 
@@ -161,7 +161,7 @@ In GitHub, depending on whether you have an Enterprise Cloud or Team Plan, you c
 
 The GitHub network settings need to know about your Enterprise/Organization so, before creating the network settings resource in Azure, we need to get a hold of the Enterprise ID/Organization ID from GitHub. As far as I know, this is not displayed anywhere in the UI so we need to execute a GraphQL API call as shown below:
 
-### Retrieving the Enterprise ID
+### GitHub Enterprise ID
 
 We get the organization ID via the following GraphQL call, before the call we also need to generate a personal access token with the required grants.
 
@@ -179,8 +179,7 @@ https://api.github.com/graphql
 **TIP**: The documentation for configuring the private networking for GitHub-hosted runners in your **Enterprise** can be found [here](https://docs.github.com/en/enterprise-cloud@latest/admin/configuring-settings/configuring-private-networking-for-hosted-compute-products/configuring-private-networking-for-github-hosted-runners-in-your-enterprise)
 {{</alert>}}
 
-
-### Retrieving the Organization ID
+### GitHub Organization ID
 
 ```sh
 curl -H "Authorization: Bearer BEARER_TOKEN" -X POST \
@@ -196,9 +195,9 @@ https://api.github.com/graphql
 **TIP**: The documentation for configuring private networking for GitHub-hosted runners in your **Organization** can be found [here](https://docs.github.com/en/organizations/managing-organization-settings/configuring-private-networking-for-github-hosted-runners-in-your-organization)
 {{</alert>}}
 
-### Creating the GitHub network setting resource
+### Create the GitHub network setting
 
-Here's the Terraform code to create the GitHub network settings resource:
+Here's the Terraform code to create the GitHub network settings resource in Azure:
 
 ```hcl
 terraform {
@@ -320,10 +319,10 @@ jobs:
 
 ## References
 
-- <https://www.youtube.com/watch?v=57ZwdztCx2w&ab_channel=JohnSavill%27sTechnicalTraining>
-- <https://docs.github.com/en/organizations/managing-organization-settings/about-azure-private-networking-for-github-hosted-runners-in-your-organization>
-- <https://docs.github.com/en/enterprise-cloud@latest/admin/configuring-settings/configuring-private-networking-for-hosted-compute-products/configuring-private-networking-for-github-hosted-runners-in-your-enterprise>
-- <https://github.com/garnertb/github-runner-vnet>
+- [John Savill Technical training - Private Endpoints](https://www.youtube.com/watch?v=57ZwdztCx2w&ab_channel=JohnSavill%27sTechnicalTraining)
+- [GitHub docs - Organization private networking](https://docs.github.com/en/organizations/managing-organization-settings/about-azure-private-networking-for-github-hosted-runners-in-your-organization)
+- [GitHub docs - Enterprise private networking](ttps://docs.github.com/en/enterprise-cloud@latest/admin/configuring-settings/configuring-private-networking-for-hosted-compute-products/configuring-private-networking-for-github-hosted-runners-in-your-enterprise)
+- [Example code](https://github.com/garnertb/github-runner-vnet)
 
 ## Conclusion
 
