@@ -2,7 +2,7 @@ name: Build and deploy Hugo site via GitHub Pages
 
 on:
   push:
-    branches: [$default-branch]
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
