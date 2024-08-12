@@ -21,12 +21,14 @@ jobs:
       HUGO_ENV: production
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           submodules: recursive # Fetch Hugo themes (true OR recursive)
           fetch-depth: 0 # Fetch all history for .GitInfo and .Lastmod
 
       - name: Setup Pages
+        id: pages
         uses: actions/configure-pages@v5
 
       - name: Setup Hugo
@@ -36,7 +38,7 @@ jobs:
           extended: true
 
       - name: Build
-        run: hugo --minify --baseURL ${{ vars.BaseUrl }}
+        run: hugo --minify --baseURL ${{ steps.pages.outputs.base_url }}
 
       - name: Create IndexNow API key
         if: ${{ github.event_name == 'push' }}
