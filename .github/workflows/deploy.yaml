@@ -38,13 +38,7 @@ jobs:
           extended: true
 
       - name: Build
-        run: hugo --minify --baseURL ${{ steps.pages.outputs.base_url }}
-
-      - name: Submit pages to Google Search Console
-        uses: robingenz/action-google-indexing@v1.0.1
-        with:
-          siteUrl: maxdon.tech
-          gcpServiceAccountKey: ${{ secrets.GOOGLE_KEY }}        
+        run: hugo --minify --baseURL ${{ steps.pages.outputs.base_url }}   
 
       - name: Create IndexNow API key
         if: ${{ github.event_name == 'push' }}
