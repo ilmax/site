@@ -41,7 +41,7 @@ jobs:
         run: hugo --minify --baseURL ${{ steps.pages.outputs.base_url }}
 
       - name: Submit pages to Google Search Console
-        uses: robingenz/action-google-indexing@v1
+        uses: robingenz/action-google-indexing@v1.0.1
         with:
           siteUrl: ${{ steps.deployment.outputs.page_url }}
           gcpServiceAccountKey: ${{ secrets.GOOGLE_KEY }}        
@@ -84,7 +84,7 @@ jobs:
           name: github-pages
 
       - name: Submit pages to Google Search Console
-        uses: robingenz/action-google-indexing@v1
+        uses: robingenz/action-google-indexing@v1.0.1
         with:
           siteUrl: ${{ steps.deployment.outputs.page_url }}
           gcpServiceAccountKey: ${{ secrets.GOOGLE_KEY }}
