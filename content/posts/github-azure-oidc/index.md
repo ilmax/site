@@ -1,5 +1,6 @@
 ---
 title: "Goodbye secrets 👋, Hello token exchange: Connect Your GitHub Actions to Azure securely"
+description: Authenticate GitHub action to Azure without using secrets
 date: 2023-01-19T16:39:35+01:00
 draft: false
 tags: ["github", "azure", "devops", "terraform"]
@@ -9,10 +10,12 @@ OpenID Connect (OIDC) integration between Azure Active Directory and GitHub allo
 
 This functionality has been available for quite a while, it was first announced on [October 2021](https://azure.microsoft.com/en-us/updates/public-preview-openid-connect-integration-between-azure-ad-and-github-actions/) and up until now, it has been on my "things to look into" list.
 
-Recently I've been working on a project to migrate Azure DevOps to GitHub so I decided that time has come to look into this functionality.
+Recently I've been working on a project to migrate Azure DevOps to GitHub so I decided that the time has come to look into this functionality.
 
 ## How a typical connection is configured
+
 Usually, to connect to Azure as an application (i.e. when running a GitHub Action) you need to:
+
 1. Create a Service Principal in Azure Active Directory
 2. Create a Service Principal Credential
 3. Grant to the Service Principal permissions on the subscription(s)
@@ -22,8 +25,9 @@ Usually, to connect to Azure as an application (i.e. when running a GitHub Actio
 > Please note that the `az ad sp create-for-rbac` can simplify the process a bit since it can do steps from 1 to 3 in a single go,  more info can be found in the [documentation](https://learn.microsoft.com/en-us/cli/azure/ad/sp?view=azure-cli-latest#az-ad-sp-create-for-rbac)
 
 ## Why should you use secret-less connections
+
 Having secret-less connections is far better than using some form of a shared secret.
-Since you don't have any secrets, you can't leak any moreover shared secrets usually comes with a fixed validity. Ideally, you should rotate them often to limit the risk derived from a secret leak.
+Since you don't have any secrets, you can't leak any moreover shared secrets usually come with a fixed validity. Ideally, you should rotate them often to limit the risk derived from a secret leak.
 
 Additionally, in the case of automated infrastructure deployments, the Service Principal will have high privileges on your subscription(s) and/or possibly **Azure Active Directory** since it has to create resources, potentially assign RBAC role assignments (that require the Owner role) making the event of a secret leak even more dangerous.
 
@@ -32,7 +36,9 @@ With secret-less connections, on the other hand, even if the GitHub Actions secr
 > Please note that even if you store the shared secret in GitHub secrets, it's still fairly easy to get access to the original value, see this StackOverflow [question](https://stackoverflow.com/questions/59481933/how-can-i-extract-secrets-using-github-actions) for example.
 
 ## I'm sold, now how can I set it up?
+
 To configure OpenID Connect Integrations between Azure Active Directory and GitHub you need to do a couple of things:
+
 1. Create an App Registration in Azure Active Directory
 2. Create a Service Principal for the App Registration created above
 3. Add the Federated Credential in the App Registration
@@ -44,10 +50,12 @@ To configure OpenID Connect Integrations between Azure Active Directory and GitH
 For a step-by-step guide, refer to the GitHub [documentation](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-azure)
 
 ## How does it work?
+
 It's not the goal of this post to dig into the nitty-gritty details, so my explanation will be quite brief.
 Under the hood, this uses **Azure Workload identities** to exchange a token issued by GitHub with a token issued by Azure Active Directory.
 
 For the token exchange to be successful, you need to establish a trust relationship between the GitHub token issue and the Azure Active Directory. This trust relationship boils down to configuring the Federated Credential (created in step 3) in Azure Active Directory filling in the content of two of the claims issued by GitHub to the workflow, more specifically you need to fill in:
+
 - The issuer (**iss** claim of the access token issued by GitHub)
 - The subject (**sub** claim of the access token issued by GitHub)
 - The audience (fixed value of `api://AzureADTokenExchange`)
@@ -58,7 +66,8 @@ Here below you can find how GitHub explains it in their announcement post.
 If you want to dig deeper, here's the [documentation](https://learn.microsoft.com/en-us/azure/active-directory/develop/workload-identity-federation).
 
 ## Manual configuration
-If you go to Azure Active Directory, after you created an App Registration, when you try to add Federated Credentials, the Azure Active Directory Portal helps you with filling in the required details for setting up GitHub Federated Credentials.
+
+If you go to Azure Active Directory, after you create an App Registration, when you try to add Federated Credentials, the Azure Active Directory Portal helps you with filling in the required details for setting up GitHub Federated Credentials.
 
 The screen looks like the following:
 ![GitHub Federated Credentials](federated-credentials.png "GitHub Federated Credentials")
@@ -66,6 +75,7 @@ The screen looks like the following:
 If you have to configure multiple repositories, the manual approach falls short so let's have a look at how we can configure it with Terraform.
 
 ## Terraform configuration
+
 Since Terraform has a provider-based approach, we can configure a GitHub repository (or many) and, at the same time, create the required setup in Azure Active Directory.
 
 Let's see how is done:
@@ -190,11 +200,12 @@ As you can imagine this was not ideal so I decided to look at possible alternati
 
 > Please note that In order to achieve this you need to use GitHub deployment environments. Environments, environment secrets, and environment protection rules are available in public repositories for all products. For access to environments, environment secrets, and deployment branches in private or internal repositories, you must use GitHub Pro, GitHub Team, or GitHub Enterprise. For access to other environment protection rules in private or internal repositories, you must use GitHub Enterprise, see [documentation](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment)
 
-To achieve what I described above, I needed a way to change the content of the subject claim issued by GitHub, luckily for us, this functionality is supported by GitHub using [this](https://docs.github.com/en/rest/actions/oidc?apiVersion=2022-11-28#set-the-customization-template-for-an-oidc-subject-claim-for-an-organization) api, even better, this functionality is also supported by the GitHub Terraform provider.
+To achieve what I described above, I needed a way to change the content of the subject claim issued by GitHub, luckily for us, this functionality is supported by GitHub using [this](https://docs.github.com/en/rest/actions/oidc?apiVersion=2022-11-28#set-the-customization-template-for-an-oidc-subject-claim-for-an-organization) API, even better, this functionality is also supported by GitHub Terraform provider.
 
 > As far as I know, there's no UI support to change the content of the access token issued by GitHub yet.
 
 ## Configure the subject claim with Terraform
+
 Here below you can see how to configure the subject claim for our use case:
 
 ```tf
@@ -225,6 +236,7 @@ Also bear in mind that however you configure the GitHub sub claim, **MUST** matc
 There're more customizations possible and you can learn about these in the GitHub [documentation](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect#customizing-the-token-claims).
 
 The last change you need to implement, besides granting RBAC privileges to the Service Principal on your subscriptions(s), is to configure the workflow to use token exchange to authenticate into Azure, there are two parts to it:
+
 1. Configure the required permissions in the workflow
 2. Configure the action **azure/login@v1** to use the token exchange.
 
@@ -254,7 +266,9 @@ jobs:
           az account show
           az group list
 ```
+
 ## Summary
+
 As you can see, the configuration is quite straightforward and it allows you to get rid of secrets, improve your security posture **and**, as a bonus, forget about the expiring credentials issue.
 
 I hope you found this useful.

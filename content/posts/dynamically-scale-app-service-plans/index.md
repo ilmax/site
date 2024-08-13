@@ -1,5 +1,6 @@
 ---
-title: "Dynamically scale down AppService outside business hours to save 💰💰"
+title: "Dynamically scale down App Services outside business hours to save 💰💰"
+description: How to save money in Azure automatically scaling down App Services outside business hours
 date: 2022-07-25T12:59:43Z
 draft: false
 tags: ["azure", "devops", "tutorial"]

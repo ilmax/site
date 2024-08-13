@@ -1,5 +1,6 @@
 ---
 title: "Install K3s on a Raspberry PI - Worker node"
+description: How to install a Kubernetes multi-node cluster on Raspberry PI 5, the worker nodes setup
 date: 2024-07-12T09:23:18+02:00
 draft: false
 series: ["K3s on Raspberry PI"]
@@ -29,9 +30,9 @@ Similar to the previous article, we will go through some basic O.S. configuratio
     sudo apt autoclean
     ```
 
-{{<alert icon="info-solid">}}
+{{<note>}}
 More information on what is the **local** domain and how it works can be found [here](https://en.wikipedia.org/wiki/.local)
-{{</alert>}}
+{{</note>}}
 
 ### Configure a static IP on the Raspberry PI
  
@@ -133,10 +134,10 @@ If you want to change the role from `<none>` to `worker`, we need to add a label
 kubectl label node pi-node-02 kubernetes.io/role=worker
 ```
 
-{{<alert>}}
+{{<warn>}}
 Please note that's not possible to specify the label `kubernetes.io/role=worker` at K3s installation time using the parameter `--node-label`.
 The installation will result in an error, thus we have to manually label the node after the installation
-{{</alert>}}
+{{</warn>}}
 
 ## Lens Metrics
 

@@ -1,5 +1,6 @@
 ---
 title: "Terraform Tips & Tricks: Managing Large-Scale Azure Resource Imports"
+description: How to bulk import existing infrastructure in terraform
 date: 2023-01-08T14:44:21Z
 draft: false
 tags: ["azure", "Terraform", "devops"]

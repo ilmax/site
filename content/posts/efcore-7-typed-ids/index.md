@@ -1,5 +1,6 @@
 ---
 title: "EF Core 7 is here - Welcome typed entity id 🍾"
+description: How to avoid primitive pobsession with Entity Framework 7 and typed IDs
 date: 2022-11-17T13:09:55Z
 draft: false
 tags: ["ef-core", "dotnet", "ddd", "sql"]
