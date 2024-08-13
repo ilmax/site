@@ -1,5 +1,6 @@
 ---
 title: "Microsoft Graph Permissions Well-Known Ids"
+description: Microsoft Graph Permissions Well-Known Ids and how to query them from Azure
 date: 2023-02-09T17:51:31+01:00
 draft: false
 tags: ["azure", "ms-graph"]
@@ -30,6 +31,7 @@ The snippet above displays all the roles and scope defined for the Microsoft Gra
 >Pro tip! If you add -o jsonc at the end of an az cli command, you will get a nice colorized json output. You can find all the output modifiers for az cli in the [documentation](https://learn.microsoft.com/en-us/cli/azure/format-output-azure-cli)
 
 ## Well-known scopes
+
 Here below you can find the list of all the well-known scopes defined by Microsoft Graph
 
 | **Description**                               | **Id**                                                                                                                                                                                                                                                                                                                                                                                    | **Type** | **Value**                                               |

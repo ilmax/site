@@ -1,5 +1,6 @@
 ---
 title: "Install K3s on a Raspberry PI - TLS certificates"
+description: Use Let'sEncrypt free TLS certificates on Kubernetes
 date: 2024-07-16T20:45:15+02:00
 draft: false
 series: ["K3s on Raspberry PI"]
@@ -42,9 +43,9 @@ The DNS-01 challenge process is represented in the following sequence diagram:
 
 {{<figure src="dns01.svg" alt="Let's Encrypt DNS01 challenge" caption="*The diagram DNS-01 challenge*" nozoom=true >}}
 
-{{<alert icon="lightbulb" cardColor="#097969" conColor="#AFE1AF" textColor="#f1faee">}}
-**Tip:** If you want to read more about how the ACME protocol works, you can read the internet standard [RFC 8555](https://datatracker.ietf.org/doc/html/rfc8555)
-{{</alert>}}
+{{<tip>}}
+If you want to read more about how the ACME protocol works, you can read the internet standard [RFC 8555](https://datatracker.ietf.org/doc/html/rfc8555)
+{{</tip>}}
 
 ### DNS Registrar
 
@@ -120,9 +121,9 @@ Let's see here below what the configuration looks like:
                key: api-key                     # Matches the key of the secret created earlier
    ```
   
-  {{<alert cardColor="#e63946" iconColor="#1d3557" icon="fire">}}
+  {{<caution>}}
   Make sure you replace the email in the manifest above.
-  {{</alert>}}
+  {{</caution>}}
 
 1. Create the staging `ClusterIssuer` in the cluster
 
@@ -130,9 +131,9 @@ Let's see here below what the configuration looks like:
     kubectl apply -f clusterissuer-staging.yml
     ```
 
-{{<alert>}}
-**Warn:** If you use a different namespace than `cert-issuer`, you may need to configure the Cluster Issuer Namespace to specify cert-manager in which namespace to look for the Cloudflare secret. Make sure to read the documentation [here](https://cert-manager.io/docs/configuration/#cluster-resource-namespace)
-{{</alert>}}
+{{<warn>}}
+If you use a different namespace than `cert-issuer`, you may need to configure the Cluster Issuer Namespace to specify cert-manager in which namespace to look for the Cloudflare secret. Make sure to read the documentation [here](https://cert-manager.io/docs/configuration/#cluster-resource-namespace)
+{{</warn>}}
 
 ### Verify staging ClusterIssuer installation
 
@@ -180,9 +181,9 @@ After the record has been created, it's time to test the certificate-issuing pro
      - k3s.maxdon.tech                        # This should be the same name of the A record created in Cloudflare earlier
    ```
 
-  {{<alert cardColor="#e63946" iconColor="#1d3557" icon="fire">}}
+  {{<caution>}}
   Make sure you replace the domain **k3s.maxdon.tech** with your domain.
-  {{</alert>}}
+  {{</caution>}}
 
 1. Create the test certificate in the cluster
 
@@ -198,9 +199,9 @@ NAME               READY   SECRET             AGE
 test-certificate   True   test-example-tls    75s
 ```
 
-{{<alert icon="info-solid">}}
+{{<note>}}
 Please note that this step can take up to a couple of minutes when using the DNS-01 challenge!
-{{</alert>}}
+{{</note>}}
 
 If the process went well, we now have a secret that contains our certificate, the name of the secret is defined when we create the certificate resource, and we can then inspect the secret using this command:
 
@@ -321,9 +322,9 @@ Now, that we correctly obtained a staging certificate, it's time to configure ce
               name: cloudflare-api-key-secret
               key: api-key
   ```
-  {{<alert cardColor="#e63946" iconColor="#1d3557" icon="fire">}}
+  {{<caution>}}
   Make sure you replace the email in the manifest above.
-  {{</alert>}}
+  {{</caution>}}
 
 1. Create the staging `ClusterIssuer` in the cluster
 
@@ -420,9 +421,9 @@ spec:
     secretName: k3s-maxdon-tech-tls         # Match the name of the secret that contains the certificate
 ```
 
-{{<alert cardColor="#e63946" iconColor="#1d3557" icon="fire">}}
+{{<caution>}}
 Make sure you replace the host **k3s.maxdon.tech** with your domain.
-{{</alert>}}
+{{</caution>}}
 
 Now let's create all the resources in the cluster using our friend kubectl as follows:
 

@@ -1,5 +1,6 @@
 ---
 title: "Install K3s on a Raspberry PI - Master node"
+description: How to install a Kubernetes multi-node cluster on Raspberry PI 5, the master node setup
 date: 2024-07-01T18:55:40+02:00
 draft: false
 series: ["K3s on Raspberry PI"]
@@ -20,9 +21,9 @@ The initial set of features that I wanted to set up were the following:
 
 As we will soon see, even this limited set of features, requires a decent amount of work to configure, so this process is split into a mini-series of articles to keep them relatively short.
 
-{{<alert icon="info-solid">}}
+{{<note>}}
 Please note that I'm not going through all the O.S. installation and initial configuration in this article, so as a pre-requisite you have to install the O.S. into an SD card (or SSD if you happen to have the M2 Hat).
-{{</alert>}}
+{{</note>}}
 
 ### Why K3s
 
@@ -45,9 +46,10 @@ sudo apt --fix-broken install -y
 sudo apt autoremove -y
 sudo apt autoclean
 ```
-{{<alert icon="info-solid">}}
+
+{{<note>}}
 More information on what is the **local** domain and how it works can be found [here](https://en.wikipedia.org/wiki/.local)
-{{</alert>}}
+{{</note>}}
 
 ### Configure a static IP on the Raspberry PI
 
@@ -82,9 +84,9 @@ echo ' cgroup_memory=1 cgroup_enable=memory' | sudo tee -a /boot/firmware/cmdlin
 sudo reboot
 ```
 
-{{<alert>}}
+{{<warn>}}
 Without memory cgroup v2 enabled, k3s will fail to start with the following error: `level=fatal msg="failed to find memory cgroup (v2)"`
-{{</alert>}}
+{{</warn>}}
 
 ### Verify cgroup v2 is enabled
 
@@ -134,9 +136,9 @@ curl -sfL https://get.k3s.io | K3S_TOKEN=$K3S_TOKEN sh -s - server \
   --kube-controller-manager-arg 'terminated-pod-gc-threshold=10'
 ```
 
-{{<alert icon="info-solid" >}}
+{{<note>}}
 Please note that the argument `--node-taint...` tells Kubernetes not to schedule pods on this node, if you want to schedule pods on the master node as well, remove that argument but bear in mind that's not the suggested approach. If you set up a single Kubernetes node though, you have to remove that argument.
-{{</alert>}}
+{{</note>}}
 
 ### Installation parameters
 
@@ -172,9 +174,9 @@ NAME                  STATUS   ROLES                  AGE    VERSION
 pi-node-01            Ready    control-plane,master   20s   v1.29.5+k3s1
 ```
 
-{{<alert icon="info-solid" >}}
+{{<note>}}
 To troubleshoot the installation you can look at the logs of the k3s service with `journalctl -u k3s` or `journalctl -xeu k3s.service`
-{{</alert>}}
+{{</note>}}
 
 ## MetalLB Installation
 
@@ -194,9 +196,9 @@ MetalLB can be configured in two different modes:
 Both approaches have their pros and cons, in the layer 2 case, a single node can become a bottleneck while using BGP, if a node goes down, all active connections to the service will be terminated.
 Since there's no clear winner here, I'm opting for using the layer 2 approach.
 
-{{<alert>}}
+{{<warn>}}
 You can look at the limitation for [layer 2 mode](https://metallb.universe.tf/concepts/layer2/#limitations) or the [BGP mode](https://metallb.universe.tf/concepts/bgp/#limitations) on the MetalLB documentation
-{{</alert>}}
+{{</warn>}}
 
 Logically we need to reserve some IP in the DHCP configuration so that there won't be multiple appliances with the same IP on the network. You should be able to configure your router to reserve some IP addresses, and then you can use those IP addresses in a Metallb `AddressPool`.
 
@@ -237,9 +239,9 @@ If you connect the Raspberry PI to the network via WiFi, you need to also change
 
 > You can configure the interface (most likely called wlan0) with the following command: `sudo ifconfig <device> promisc`
 
-{{<alert>}}
+{{<warn>}}
 **Bear in mind that this configuration doesn't survive the node restart**
-{{</alert>}}
+{{</warn>}}
 
 ### Make WiFi interface configuration persistent (Optional)
 

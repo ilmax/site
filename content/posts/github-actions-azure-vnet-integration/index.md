@@ -1,5 +1,6 @@
 ---
-title: "Github Actions Azure Vnet Integration"
+title: "GitHub Actions Azure Vnet Integration"
+description: How to connect from GitHub Actions to Azure PaaS when Public Access is disabled
 date: 2024-07-24T14:26:00+02:00
 draft: false
 tags: ["github", "azure", "devops", "terraform"]
@@ -41,9 +42,9 @@ To set this up we need to configure a few things:
 1. Create Runner Group(s) and Runner(s) on GitHub
 1. Change your GitHub action `runs-on` to reference the runner
 
-{{<alert cardColor="#e63946" iconColor="#1d3557" icon="fire">}}
-WARN: This functionality is only supported by **GitHub Enterprise** and **GitHub Team** plans
-{{</alert>}}
+{{<caution>}}
+This functionality is only supported by **GitHub Enterprise** and **GitHub Team** plans
+{{</caution>}}
 
 ## Azure private connectivity
 
@@ -85,11 +86,11 @@ blob.am5prdstr12a.store.core.windows.net. 60 IN A 1.2.3.5
 
 As you can see above, after we turn on Private Endpoints for a particular service, we get another DNS indirection. This zone coincides with the name of the Private DNS Zone in which we have to create our records to enable private connectivity.
 
-{{<alert icon="lightbulb" cardColor="#097969" iconColor="#AFE1AF" textColor="#f1faee">}}
-**TIP:** You can read more about how this works in the Microsoft [documentation](https://learn.microsoft.com/en-us/azure/storage/common/storage-private-endpoints#dns-changes-for-private-endpoints).
+{{<tip>}}
+You can read more about how this works in the Microsoft [documentation](https://learn.microsoft.com/en-us/azure/storage/common/storage-private-endpoints#dns-changes-for-private-endpoints).
 
 Different services have different DNS Zones and those are mentioned in the documentation [here](https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns).
-{{</alert>}}
+{{</tip>}}
 
 An A record is then created in the respective Private DNS Zone that resolves to the IP of the NIC that represents your PaaS service.
 
@@ -97,13 +98,13 @@ Private Endpoint can be linked to one or more Private DNS Zones to make sure tha
 
 ### VNET Peering
 
-If you need to connect to PaaS services via Private Endpoint from a different VNET than the one whenre the Private Endpoint NICs lives, you can take advantage of network peering and you should be able to communicate without any problems. VNET Peering is very flexible and can peer networks that are in the same regions as well as different region, subscription or even tenant.
+If you need to connect to PaaS services via Private Endpoint from a different VNET than the one where the Private Endpoint NICs live, you can take advantage of network peering and you should be able to communicate without any problems. VNET Peering is very flexible and can peer networks that are in the same regions as well as different regions, subscriptions or even tenants.
 
 To be able to resolve the hostname to the private IP of the NIC created by the Private Endpoints, we need to make sure that the private DNS Zone is linked to all the VNETs that have to connect to the PaaS service.
 
-{{<alert>}}
-Bear in mind that network peering is not transitive, so if you need to traverse several networks, you need to configure an network virtual appliance (NVA) that knows how to route traffic
-{{</alert>}}
+{{<note>}}
+Bear in mind that network peering is not transitive, so if you need to traverse several networks, you need to configure a network virtual appliance (NVA) that knows how to route traffic
+{{</note>}}
 
 All three components briefly described above are used to configure private access to PaaS services and GitHub-hosted runners can take advantage of this infrastructure. Let's see how below.
 
@@ -175,9 +176,9 @@ curl -H "Authorization: Bearer BEARER_TOKEN" -X POST \
 https://api.github.com/graphql
 ```
 
-{{<alert icon="lightbulb" cardColor="#097969" iconColor="#AFE1AF" textColor="#f1faee">}}
-**TIP**: The documentation for configuring the private networking for GitHub-hosted runners in your **Enterprise** can be found [here](https://docs.github.com/en/enterprise-cloud@latest/admin/configuring-settings/configuring-private-networking-for-hosted-compute-products/configuring-private-networking-for-github-hosted-runners-in-your-enterprise)
-{{</alert>}}
+{{<tip>}}
+The documentation for configuring the private networking for GitHub-hosted runners in your **Enterprise** can be found [here](https://docs.github.com/en/enterprise-cloud@latest/admin/configuring-settings/configuring-private-networking-for-hosted-compute-products/configuring-private-networking-for-github-hosted-runners-in-your-enterprise)
+{{</tip>}}
 
 ### GitHub Organization ID
 
@@ -191,9 +192,9 @@ curl -H "Authorization: Bearer BEARER_TOKEN" -X POST \
 https://api.github.com/graphql
 ```
 
-{{<alert icon="lightbulb" cardColor="#097969" iconColor="#AFE1AF" textColor="#f1faee">}}
-**TIP**: The documentation for configuring private networking for GitHub-hosted runners in your **Organization** can be found [here](https://docs.github.com/en/organizations/managing-organization-settings/configuring-private-networking-for-github-hosted-runners-in-your-organization)
-{{</alert>}}
+{{<tip>}}
+The documentation for configuring private networking for GitHub-hosted runners in your **Organization** can be found [here](https://docs.github.com/en/organizations/managing-organization-settings/configuring-private-networking-for-github-hosted-runners-in-your-organization)
+{{</tip>}}
 
 ### Create the GitHub network setting
 

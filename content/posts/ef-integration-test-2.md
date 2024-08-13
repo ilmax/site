@@ -1,5 +1,6 @@
 ---
 title: "Integration testing with EF Core, part 2"
+description: How to run integration test with Entity Framework Core part 2, testcontainers
 date: 2021-04-06T16:25:33Z
 draft: false
 tags: ["efcore", "testing", "dotnet", "docker"]

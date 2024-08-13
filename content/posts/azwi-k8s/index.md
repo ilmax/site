@@ -1,5 +1,6 @@
 ---
 title: "Implement Azure AD Workload Identity on AKS with terraform"
+description: Implement Managed identity (Workload identity) on Azure Kubernetes Services using Terraform
 date: 2022-02-24T09:55:39Z
 draft: false
 tags: ["azure", "terraform", "helm", "kubernetes"]
