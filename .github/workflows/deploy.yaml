@@ -9,7 +9,7 @@ on:
 permissions:
   contents: read
   pages: write
-  id-token: write  
+  id-token: write
 
 concurrency:
   group: "pages"
@@ -39,6 +39,12 @@ jobs:
 
       - name: Build
         run: hugo --minify --baseURL ${{ steps.pages.outputs.base_url }}
+
+      - name: Submit pages to Google Search Console
+        uses: robingenz/action-google-indexing@v1
+        with:
+          siteUrl: ${{ steps.deployment.outputs.page_url }}
+          gcpServiceAccountKey: ${{ secrets.GOOGLE_KEY }}        
 
       - name: Create IndexNow API key
         if: ${{ github.event_name == 'push' }}
@@ -75,4 +81,10 @@ jobs:
       - name: Delete artifact
         uses: geekyeggo/delete-artifact@v5
         with:
-          name: github-pages          
+          name: github-pages
+
+      - name: Submit pages to Google Search Console
+        uses: robingenz/action-google-indexing@v1
+        with:
+          siteUrl: ${{ steps.deployment.outputs.page_url }}
+          gcpServiceAccountKey: ${{ secrets.GOOGLE_KEY }}
