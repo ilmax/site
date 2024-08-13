@@ -43,7 +43,7 @@ jobs:
       - name: Submit pages to Google Search Console
         uses: robingenz/action-google-indexing@v1.0.1
         with:
-          siteUrl: ${{ steps.pages.outputs.base_url }}
+          siteUrl: maxdon.tech
           gcpServiceAccountKey: ${{ secrets.GOOGLE_KEY }}        
 
       - name: Create IndexNow API key
@@ -86,5 +86,5 @@ jobs:
       - name: Submit pages to Google Search Console
         uses: robingenz/action-google-indexing@v1.0.1
         with:
-          siteUrl: ${{ steps.deployment.outputs.page_url }}
+          siteUrl: maxdon.tech
           gcpServiceAccountKey: ${{ secrets.GOOGLE_KEY }}
