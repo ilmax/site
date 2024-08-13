@@ -50,6 +50,14 @@ jobs:
         with:
           path: ./public
 
+      - name: Push changes to IndexNow
+        uses: bojieyang/indexnow-action@v2
+        with:
+          sitemap-location: "${{ steps.deployment.outputs.page_url }}sitemap.xml"
+          since: 4
+          since-unit: "year"
+          key: ${{ secrets.INDEXNOW_KEY }}
+
   # Deployment job
   deploy:
     if: ${{ github.event_name != 'pull_request' }}
@@ -68,8 +76,8 @@ jobs:
         uses: bojieyang/indexnow-action@v2
         with:
           sitemap-location: "${{ steps.deployment.outputs.page_url }}sitemap.xml"
-          since: 1
-          since-unit: "day"
+          since: 4
+          since-unit: "year"
           key: ${{ secrets.INDEXNOW_KEY }}
 
       - name: Delete artifact
