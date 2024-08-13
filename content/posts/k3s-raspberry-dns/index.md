@@ -1,5 +1,6 @@
 ---
 title: "Install K3s on a Raspberry PI - Automatic external DNS management"
+description: Use ExternalDNS to automatically synchronize DNS record with your DNS provider
 date: 2024-08-05T21:11:10+02:00
 draft: true
 series: ["K3s on Raspberry PI"]
