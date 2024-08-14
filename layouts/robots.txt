@@ -1,7 +1,6 @@
 User-agent: *
 Disallow: /about/
 Disallow: /tags/
-Disallow: /posts
 Disallow: /posts/page/
 Allow: /
 Sitemap: {{ "sitemap.xml" | absURL }}
