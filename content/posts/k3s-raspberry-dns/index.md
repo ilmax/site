@@ -32,9 +32,9 @@ ExternalDNS can monitor several different types of Kubernetes resources used to 
 
 The source is the resource type ExternalDNS watches for changes and is the one used to construct the DNS records that will be then synched in the DNS provider.
 
-{{<alert icon="lightbulb" cardColor="#097969" iconColor="#AFE1AF" textColor="#f1faee">}}
-**TIP:** The list of supported sources can be found in the [documentation](https://kubernetes-sigs.github.io/external-dns/v0.14.2/sources/sources/).
-{{</alert>}}
+{{<tip>}}
+The list of supported sources can be found in the [documentation](https://kubernetes-sigs.github.io/external-dns/v0.14.2/sources/sources/).
+{{</tip>}}
 
 ### Providers
 
@@ -45,9 +45,9 @@ There are a lot of supported providers with different stability levels, the one 
 
 So far I haven't found any issues using the CloudFlare provider, both additions and deletions work just fine.
 
-{{<alert icon="lightbulb" cardColor="#097969" iconColor="#AFE1AF" textColor="#f1faee">}}
-**TIP:** The list of supported providers and their relative stability levels can be found in the [documentation](https://kubernetes-sigs.github.io/external-dns/v0.14.2/#status-of-in-tree-providers).
-{{</alert>}}
+{{<tip>}}
+The list of supported providers and their relative stability levels can be found in the [documentation](https://kubernetes-sigs.github.io/external-dns/v0.14.2/#status-of-in-tree-providers).
+{{</tipt>}}
 
 ### Annotations
 
@@ -56,9 +56,9 @@ ExternalDNS comes with a slew of annotations that allow you to customize its beh
 - **external-dns.alpha.kubernetes.io/ttl** that specifies the time to live (TTL) of the DNS record
 - **external-dns.alpha.kubernetes.io/target** that specifies the DNS record targets (Its usage will be covered in the [Recipes](#recipes) section)
 
-{{<alert icon="lightbulb" cardColor="#097969" iconColor="#AFE1AF" textColor="#f1faee">}}
-**TIP:** The list of supported annotations can be found in the [documentation](https://kubernetes-sigs.github.io/external-dns/v0.14.2/annotations/annotations/).
-{{</alert>}}
+{{<tip>}}
+The list of supported annotations can be found in the [documentation](https://kubernetes-sigs.github.io/external-dns/v0.14.2/annotations/annotations/).
+{{</tip>}}
 
 ### Record ownership
 
@@ -136,9 +136,9 @@ Traefik's Gateway Address can be configured in 3 different ways:
 - Using a hostname
 - Using a service reference
 
-{{<alert icon="lightbulb" cardColor="#097969" iconColor="#AFE1AF" textColor="#f1faee">}}
-**TIP:** You can dig deeper in the Traefik's [documentation](https://doc.traefik.io/traefik/providers/kubernetes-gateway/#statusaddress)
-{{</alert>}}
+{{<tip>}}
+You can dig deeper in the Traefik's [documentation](https://doc.traefik.io/traefik/providers/kubernetes-gateway/#statusaddress)
+{{</tip>}}
 
 ```yml
 # I've added a comment to all the changed 
