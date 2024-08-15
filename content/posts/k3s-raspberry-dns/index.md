@@ -1,6 +1,6 @@
 ---
 title: "Install K3s on a Raspberry PI - Automatic external DNS management"
-description: Use ExternalDNS to automatically synchronize DNS record with your DNS provider
+description: How to use ExternalDNS to automatically synchronize DNS record with CloudFlare or any other DNS provider
 date: 2024-08-05T21:11:10+02:00
 draft: true
 series: ["K3s on Raspberry PI"]
@@ -18,7 +18,7 @@ Automating DNS management helps to make sure we don't have to create DNS entries
 
 This allows us to simply deploy a new service in Kubernetes, add the required annotations and have the DNS record automatically created for us, so that we can resolve the service hostname without any additional manual work.
 
-The idea is that ExternalDNS watches some resources (e.g. Ingress, Service, IngressRoute, etc) and takes care of keeping our DNS provider in sync, seems simple enough right?
+The idea is that ExternalDNS watches some resources (e.g. `Ingress`, `Service`, `IngressRoute`, etc) and takes care of keeping our DNS provider in sync, seems simple enough right?
 
 Actually to get this working it took me way more time than I want to admit, so I decided to document how I configured ExternalDNS and the result I got. Without further ado, let's dive into it.
 
@@ -26,9 +26,11 @@ Actually to get this working it took me way more time than I want to admit, so I
 
 ExternalDNS generates DNS records from exposed Kubernetes **sources** that will then be synchronized with DNS **providers**.
 
+{{<figure src="flowchart.svg" alt="ExternalDNS conceptual processing flow" caption="*Simplified conceptual processing logic of ExternalDNS*">}}
+
 ### Sources
 
-ExternalDNS can monitor several different types of Kubernetes resources used to expose an application, among the supported ones we can find Ingress, Services, Gateway and also Traefik's own IngressRoute (the one we used in the preceding blog posts).
+ExternalDNS can monitor several different types of Kubernetes resources used to expose an application, among the supported ones we can find `Ingress`, `Services`, Gateway and also Traefik's own `IngressRoute` (the one we used in the preceding blog posts).
 
 The source is the resource type ExternalDNS watches for changes and is the one used to construct the DNS records that will be then synched in the DNS provider.
 
@@ -47,7 +49,7 @@ So far I haven't found any issues using the CloudFlare provider, both additions 
 
 {{<tip>}}
 The list of supported providers and their relative stability levels can be found in the [documentation](https://kubernetes-sigs.github.io/external-dns/v0.14.2/#status-of-in-tree-providers).
-{{</tipt>}}
+{{</tip>}}
 
 ### Annotations
 
@@ -62,9 +64,10 @@ The list of supported annotations can be found in the [documentation](https://ku
 
 ### Record ownership
 
-To guarantee updates and deletions of ExternalDNS created records, ExternalDNS uses an ownership concept. There are various configurable mechanisms to implement this ownership mechanism. By default, a TXT record is used, but other available options are for example AWS DynamoDB or AWS Service Discovery.
+To guarantee updates and deletions of only ExternalDNS created records, ExternalDNS uses an ownership concept. There are various configurable mechanisms to implement this ownership mechanism. By default, a TXT record is used, but other available options are for example AWS DynamoDB or AWS Service Discovery.
+This ownership has been implemented to make sure ExternalDNS won't modify/delete any of the other DNS records present in the same DNS zone.
 
-I will to stick with the default TXT configuration because it allows me to see in my DNS provider which records are created by ExternalDNS.
+I will stick with the default TXT configuration because it doesn't require any other service running and it also allows me to quickly see, in my DNS provider, which records are created by ExternalDNS and which ones aren't.
 
 ## Installation
 
@@ -126,7 +129,9 @@ If you haven't done so, you need to install the custom CRDs before using the Gat
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.1.0/experimental-install.yaml
 ```
 
-> I won't configure TLS with the Gateway for now because that's a subject for a future post. TODO explain why we don't enable TLS
+{{<note>}}
+I won't configure TLS with the Gateway for now because I haven't yet figure out how it works, I'd like to configure a different certificate for every site, but it seems to me that, at the moment, you either use a single TLS certificate with all the hostnames at the gateway controller level, or you have to use TLSRoute that's still in the experimental channel at the time of writing (August 2024)
+{{</note>}}
 
 Traefik installation also needs to be updated to enable the kubernetesGateway provider, specify which namespaces are allowed to associate routes to the gateway and specify what the Gateway's address is using one of the supported ways. I'm using a service reference.
 
@@ -195,10 +200,8 @@ gateway:
   listeners:
     web:
       namespacePolicy: All  # Allow association for the web listener from all namespaces
-    websecure: null         # Do not enable the HTTPS listener, we will dig into this in a future post TODO explain why we don't enable TLS
+    websecure: null         # Do not enable the HTTPS listener, due to the reason explained above
 ```
-
-TODO Explain why I'm not using the websecure listener.
 
 ## Recipes
 
@@ -429,11 +432,11 @@ spec:
           port: 80
 ```
 
-TODO: Explain what to use and when
+Essentially when using a `Service` or `IngressRoute` you can decide to create an A record or a CNAME one, what you will choose depends on your configuration, in my case, I went with an A record that points to the Traefik service external IP, in my case I can pick the approach I like best because they're pretty much equivalent for my simple use case.
 
 ## Troubleshooting
 
-As I stated above, I ran into several issues while trying to setup ExternalDNS, so I decided to document them here:
+As I stated above, I ran into several issues while trying to set up ExternalDNS, so I decided to document them here:
 
 ### Failed to sync traefik.containo.us/v1alpha1, context deadline exceeded
 
@@ -447,23 +450,26 @@ This issue has been solved by disabling the legacy Traefik source using the argu
 
 ### No records are created for a Traefik IngressRoute
 
-The second issue I found was the inability to generate any record at all when using Traefik IngressRoute as a source, the message found in the logs was the following:
+The second issue I found was the inability to generate any record at all when using Traefik `IngressRoute` as a source, the message found in the logs was the following:
 
 ```sh
 time="2024-07-29T13:00:07Z" level=debug msg="Endpoints generated from service: demo-dns-site/nginx-service: []"
 ```
 
-This was because my IngressRoute was missing the target annotation, such annotation specifies the IP or Hostname of the DNS target, if you omit this annotation, nothing will be generated.
+This was because my `IngressRoute` was missing the target annotation, such annotation specifies the IP or Hostname of the DNS target, if you omit this annotation, nothing will be generated.
 
-In my wishful thinking, I was hoping that ExternalDNS could resolve the Traefik service and use the external IP as a target but there's no relationship between the IngressRoute and the Traefik service, so ExternalDNS explicitly requires you to specify a target annotation.
+In my wishful thinking, I was hoping that ExternalDNS could resolve the Traefik service and use the external IP as a target but there's no relationship between the `IngressRoute` and the Traefik service, so ExternalDNS explicitly requires you to specify a target annotation.
 
 If the target is an IPv4, an A address is generated, if the target is an IPv6 an AAAA record is generated, otherwise the target is interpreted as a string and a CNAME is thus generated.
 
-This annoyed me because it meant that the configuration had to be repeated on every IngressRoute, making it more difficult to change, especially in an environment that's mostly a test cluster. I decided then to look into the new Kubernetes networking resource, the Gateway.
+This annoyed me because it meant that the configuration had to be repeated on every `IngressRoute`, making it more difficult to change, especially in an environment that's mostly a test cluster. I decided then to look into the new Kubernetes networking resource, the Gateway.
 
 ### Gateway traefik/traefik-gateway has not accepted HTTPRoute demo-dns-site/nginx-service-http-route
 
-Gateway API is a new and improved version of the Ingress resource, the HTTPRoute resource has to specify the parent Gateway controller. TODO rewrite and the Gateway controller is assigned an address section. This seems perfect to avoid duplication so I decided to replace the Traefik IngressRoute with a Gateway and immediately ran into the following error:
+The Gateway API is a new and improved version of the old `Ingress` resource, this was to unify the configuration across the various implementations. Since the `Ingress` resource has a limited configuration area, all the implementations (NGINX, Traefik, Kong, Envoy, etc) came up with different annotations to implement specific functionality.
+The Gateway resource is the response to this fragmentation, it allows you to specify a lot more behaviors in a vendor-agnostic way, so it's a welcome addition.
+
+The Gateway resources, `HTTPRoute` and `GRPCRoute` resources have to specify the parent Gateway controller instance. A Gateway controller is in turn assigned an address. This seems perfect to avoid duplication I was facing with the `IngressRoute` option so I decided to replace the Traefik `IngressRoute` with a Gateway `HTTPRoute` and immediately ran into the following error:
 
 ```sh
 level=debug msg="Gateway traefik/traefik-gateway has not accepted HTTPRoute demo-dns-site/nginx-service-http-route"
@@ -481,7 +487,7 @@ gateway:
 
 ### No records are created for an HTTPRoute
 
-As soon as the route acceptance issue was fixed after re-deploying Traefik, the new error was the good old: Hey I don't know what DNS records to create for this HTTPRoute 🤷‍♂️.
+As soon as the route acceptance issue was fixed after re-deploying Traefik, the new error was the good old: Hey I don't know what DNS records to create for this `HTTPRoute` 🤷‍♂️.
 
 To troubleshoot this issue I went down a rabbit hole, I decided to clone both ExternalDNS and Traefik and added some logging because, truth be told, ExternalDNS with debug logging enabled is still not logging enough information to easily troubleshoot failures.
 
