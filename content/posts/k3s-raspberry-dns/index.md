@@ -136,8 +136,8 @@ We now proceed to install ExternalDNS using its Helm Chart.
 
 ### Traefik & Gateway API (Optional)
 
-This article is long enough that I won't go into details on the Gateway API, this may be an argument for a future post but, in short, it's a set of resources that will eventually replace the `Ingress` ones that gives us a better way of configuring things, without resorting to a tons of provider specific annotations.
-If you want to have a look at how it works, we need to install the CRDs and configure Traefik to enable the Gatewy API supportß.
+This article is long enough that I won't go into details on the Gateway API, this may be an argument for a future post but, in short, it's a set of resources that will eventually replace the `Ingress` ones that give us a better way of configuring things, without resorting to tons of provider-specific annotations.
+If you want to have a look at how it works, we need to install the CRDs and configure Traefik to enable the Gateway API support.
 
 If you haven't done so, you need to install the custom CRDs before using the Gateway resource in Kubernetes, you can install the latest iteration of those CRDs (1.1.0 at the time of writing) using this command:
 
@@ -230,7 +230,7 @@ My test deployment is the classic NGINX website, exposed in different ways, I've
 - Gateway HTTPRoute
 
 {{<tip>}}
-Each recipe title tell you what resource is used to expose the test NGINX deployment and what record will be generated in the DNS provider.
+Each recipe title tells you what resource is used to expose the test NGINX deployment and what record will be generated in the DNS provider.
 {{</tip>}}
 
 Here's the invariant part of the manifest, it's just a namespace and the NGINX deployment:
