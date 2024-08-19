@@ -116,6 +116,8 @@ I like Helm Charts to install Kubernetes applications/workloads and ExternalDNS 
 
     policy: sync                      # How DNS records are synchronized between sources and providers; available values are `sync` & `upsert-only`. upsert-only doesn't delete records
 
+    interval: 1m                      # This is the interval between DNS update, defaults to 1m
+
     # logLevel: debug                 # Uncomment this one to get a bit more logging, but don't get your hopes up, it's not nearly verbose enough...
     ```
 
@@ -163,7 +165,7 @@ deployment:
   replicas: 1
 
 image:
-  tag: 3.1.2
+  tag: 3.1.2 # Make sure to use a version greater than 3.1.1 otherwise the HTTPRoute approach will not work
 
 ports:
   web:
@@ -258,7 +260,7 @@ metadata:
   namespace: demo-dns-site
   annotations:
     external-dns.alpha.kubernetes.io/hostname: test.k8slab.app # This tells ExternalDNS which hostname to create
-    external-dns.alpha.kubernetes.io/ttl: 300                  # This tells ExternalDNS what TTL to use on the DNS record
+    external-dns.alpha.kubernetes.io/ttl: "300"                # This tells ExternalDNS what TTL to use on the DNS record
 spec:
   type: LoadBalancer                                           # This tells kubernetes to expose the service to be externally accessible, MetalLB provides the IP address
   selector:
@@ -272,8 +274,10 @@ spec:
 The created DNS record looks like this:
 
 ```console
-Type    Name                Content
-A       test.k8slab.app     192.168.2.210
+Type    Name        Content
+A       test        192.168.2.210
+TXT     a-test      "heritage=external-dns,external-dns/owner=external-dns,external-dns/resource=service/demo-dns-site/nginx-service"
+TXT     test        "heritage=external-dns,external-dns/owner=external-dns,external-dns/resource=service/demo-dns-site/nginx-service"
 ```
 
 ### Service - CNAME record
@@ -287,7 +291,7 @@ metadata:
   annotations:
     external-dns.alpha.kubernetes.io/target: k8slab.app        # This tells ExternalDNS which is the target of the hostname
     external-dns.alpha.kubernetes.io/hostname: test.k8slab.app # This tells ExternalDNS which hostname to create
-    external-dns.alpha.kubernetes.io/ttl: 300                  # This tells ExternalDNS what TTL to use on the DNS record
+    external-dns.alpha.kubernetes.io/ttl: "300"                # This tells ExternalDNS what TTL to use on the DNS record
 spec:
   type: LoadBalancer                                           # This tells kubernetes to expose the service to be externally accessible, MetalLB provides the IP address
   selector:
@@ -301,8 +305,10 @@ spec:
 The created DNS record looks like this:
 
 ```console
-Type    Name                Content
-CNAME   test.k8slab.app     k8slab.app
+Type    Name        Content
+CNAME   test        k8slab.app
+TXT     cname-test  "heritage=external-dns,external-dns/owner=external-dns,external-dns/resource=service/demo-dns-site/nginx-service"
+TXT     test        "heritage=external-dns,external-dns/owner=external-dns,external-dns/resource=service/demo-dns-site/nginx-service"
 ```
 
 ### IngressRote - A record
@@ -344,8 +350,10 @@ spec:
 The created DNS record looks like this:
 
 ```console
-Type    Name                Content
-A       test.k8slab.app     192.168.2.210
+Type    Name        Content
+A       test        192.168.2.210
+TXT     a-test      "heritage=external-dns,external-dns/owner=external-dns,external-dns/resource=ingressroute/demo-dns-site/nginx-ingress-secure"
+TXT     test        "heritage=external-dns,external-dns/owner=external-dns,external-dns/resource=ingressroute/demo-dns-site/nginx-ingress-secure"
 ```
 
 ### IngressRoute - CNAME record
@@ -387,8 +395,10 @@ spec:
 The created DNS record looks like this:
 
 ```console
-Type    Name                Content
-CNAME   test.k8slab.app     k8slab.app
+Type    Name        Content
+CNAME   test        k8slab.app
+TXT     cname-test  "heritage=external-dns,external-dns/owner=external-dns,external-dns/resource=ingressroute/demo-dns-site/nginx-ingress-secure"
+TXT     test        "heritage=external-dns,external-dns/owner=external-dns,external-dns/resource=ingressroute/demo-dns-site/nginx-ingress-secure"
 ```
 
 ### Gateway HTTPRoute - A record
@@ -412,6 +422,8 @@ kind: HTTPRoute
 metadata:
   name: nginx-service-http-route
   namespace: demo-dns-site
+  annotations:
+    external-dns.alpha.kubernetes.io/ttl: "300"             # This tells ExternalDNS what TTL to use on the DNS record
 spec:
   parentRefs:   # This references the Traefik Gateway
     - name: traefik-gateway
@@ -432,11 +444,93 @@ spec:
           port: 80
 ```
 
-Essentially when using a `Service` or `IngressRoute` you can decide to create an A record or a CNAME one, what you will choose depends on your configuration, in my case, I went with an A record that points to the Traefik service external IP, in my case I can pick the approach I like best because they're pretty much equivalent for my simple use case.
+The created DNS record looks like this:
+
+```console
+Type    Name        Content
+A       test        192.168.2.210
+TXT     cname-test  "heritage=external-dns,external-dns/owner=external-dns,external-dns/resource=httproute/demo-dns-site/nginx-service-http-route"
+TXT     test        "heritage=external-dns,external-dns/owner=external-dns,external-dns/resource=httproute/demo-dns-site/nginx-service-http-route"
+```
+
+### Gateway HTTPRoute - CNAME record
+
+To get a CNAME generated when using the gateway `HTTPRoute` resource, we need to add the target annotation on the gateway class itself, rather than on the `HTTPRoute` resource, here below you can see how I changed the values file used to install Traefik:
+
+```yml
+# I've added a comment to all the changed 
+# configuration values with an explanation
+additionalArguments:
+  # Sets logging level
+  - "--log.level=DEBUG"
+  # Opt out of telemetry
+  - "--global.sendanonymoususage=false"
+  # This is the name of the Traefik service
+  - "--providers.kubernetesgateway.statusaddress.service.name=traefik"
+  # This is the namespace of the Traefik service
+  - "--providers.kubernetesgateway.statusaddress.service.namespace=traefik"
+
+deployment:
+  enabled: true
+  replicas: 1
+
+image:
+  tag: 3.1.2 # Make sure to use a version greater than 3.1.1 otherwise the HTTPRoute approach will not work
+
+ports:
+  web:
+    redirectTo:
+      port: websecure
+      priority: 10
+  websecure:
+    http3:
+      enabled: true
+    advertisedPort: 4443
+    tls:
+      enabled: true
+
+ingressRoute:
+  dashboard:
+    enabled: false
+
+providers:
+  kubernetesCRD:
+    enabled: true
+  kubernetesIngress:
+    enabled: false
+  kubernetesGateway:
+    enabled: true         # Enable the Gateway provider
+
+rbac:
+  enabled: true
+
+service:
+  enabled: true
+  type: LoadBalancer
+
+gateway:
+  annotations:
+    external-dns.alpha.kubernetes.io/target: k8slab.app
+  listeners:
+    web:
+      namespacePolicy: All  # Allow association for the web listener from all namespaces
+    websecure: null         # Do not enable the HTTPS listener, due to the reason explained above
+```
+
+The created DNS record looks like this:
+
+```console
+Type    Name        Content
+A       test        192.168.2.210
+TXT     cname-test  "heritage=external-dns,external-dns/owner=external-dns,external-dns/resource=httproute/demo-dns-site/nginx-service-http-route"
+TXT     test        "heritage=external-dns,external-dns/owner=external-dns,external-dns/resource=httproute/demo-dns-site/nginx-service-http-route"
+```
+
+There you have it, now you see how to configure ExternalDNS with Traefik, you can pick to generate A records or CNAME easily using either a `Service`, a Traefik `IngressRoute` or an `HTTPRoute`. You can pick the option you prefer based on your network requirements, in my case, I went with the A record.
 
 ## Troubleshooting
 
-As I stated above, I ran into several issues while trying to set up ExternalDNS, so I decided to document them here:
+As I stated above, I ran into several issues while trying to set up ExternalDNS, so I decided to document here the issue and its solution:
 
 ### Failed to sync traefik.containo.us/v1alpha1, context deadline exceeded
 
@@ -482,7 +576,7 @@ gateway:
   listeners:
     web:
       namespacePolicy: All
-    websecure: null # Do not install the websecure listenere for now     
+    websecure: null # Do not install the websecure listener for now     
 ```
 
 ### No records are created for an HTTPRoute
