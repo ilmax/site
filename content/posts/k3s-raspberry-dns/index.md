@@ -526,7 +526,7 @@ TXT     cname-test  "heritage=external-dns,external-dns/owner=external-dns,exter
 TXT     test        "heritage=external-dns,external-dns/owner=external-dns,external-dns/resource=httproute/demo-dns-site/nginx-service-http-route"
 ```
 
-There you have it, now you see how to configure ExternalDNS with Traefik, you can pick to generate A records or CNAME easily using either a `Service`, a Traefik `IngressRoute` or an `HTTPRoute`. You can pick the option you prefer based on your network requirements, in my case, I went with the A record.
+There you have it, now you see how to configure ExternalDNS with Traefik, you can pick to generate A records or CNAME easily using either a `Service`, a Traefik `IngressRoute` or an `HTTPRoute`. You can pick the option you prefer based on your network requirements, in my case, I went with the A record because the IP of my ingress controller service never changes.
 
 ## Troubleshooting
 
