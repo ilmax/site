@@ -1,6 +1,6 @@
 ---
 title: "Goodbye secrets 👋, Hello token exchange: Connect Your GitHub Actions to Azure securely"
-description: Authenticate GitHub action to Azure without using secrets
+description: Authenticate GitHub action to Azure without using secrets or service principals, use instead OIDC token exchange
 date: 2023-01-19T16:39:35+01:00
 draft: false
 tags: ["github", "azure", "devops", "terraform"]

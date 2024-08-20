@@ -1,0 +1,43 @@
+vars: {
+  d2-config: {
+    #layout-engine: tala
+  }
+}
+
+direction: down
+
+start: "Start"
+source: "Get all the sources"
+generate: "Generate desired DNS records"
+compare: "Compare desired and actual\n DNS records"
+update: "Sync DNS records on DNS provider"
+sleep: "Sleep a configured amount of time"
+
+*: {
+  width: 380
+  height: 80
+}
+
+compare: {
+  shape: diamond
+  width: 350
+  height: 300
+}
+
+update: {
+   icon: https://latestlogo.com/wp-content/uploads/2024/01/cloudflare-icon.svg
+   icon.near: top-right
+   label.near: center-center
+}
+
+source: {
+    icon: https://icons.terrastruct.com/azure%2F_Companies%2FKubernetes.svg
+    icon.near: top-right
+    label.near: center-center
+}
+
+start -> source -> generate -> compare
+compare -> update: Changes detected
+compare -> sleep: Nothing to update
+update -> sleep
+sleep -> start: Repeat

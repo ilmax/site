@@ -54,3 +54,8 @@
     margin-right: 8px;
     color: inherit;
 }
+
+#TOCView {
+    max-width: 250px !important;
+    font-size: 0.95em;
+}
