@@ -35,7 +35,7 @@ ExternalDNS generates DNS records from exposed Kubernetes **sources** that will 
 
 ExternalDNS can monitor several different types of Kubernetes resources used to expose an application, among the supported ones we can find `Ingress`, `Services`, Gateway's `HTTPRoute` and also Traefik's own `IngressRoute` (the one I used in the preceding blog posts to expose services).
 
-A source represents a single Kubernetes resource type that ExternalDNS watches for changes and is then used to construct the DNS records that will be synched in the DNS provider. The sources that ExternalDNS monitors are configurable, and it supports multiple types of sources.
+A source represents a single Kubernetes resource type that ExternalDNS watches for changes and is then used to construct the DNS records that will be synced in the DNS provider. The sources that ExternalDNS monitors are configurable, and it supports multiple types of sources.
 
 {{<tip>}}
 The list of supported sources can be found in the [documentation](https://kubernetes-sigs.github.io/external-dns/v0.14.2/sources/sources/).
@@ -52,10 +52,10 @@ Each provider implementation comes with its stability levels, the one I'm intere
 
 So far during my testing, the CloudFlare provider worked flawlessly for both additions and deletions.
 
-As is the case for the sources, the provider is also configureable.
+As is the case for the sources, the provider is also configurable.
 
 {{<tip>}}
-The list of supported providers and their relative stability levels can be found in the [documentation](https://kubernetes-sigs.github.io/external-dns/v0.14.2/#status-of-in-tree-providers).
+The list of supported providers and their respective stability levels can be found in the [documentation](https://kubernetes-sigs.github.io/external-dns/v0.14.2/#status-of-in-tree-providers).
 {{</tip>}}
 
 ### Annotations
@@ -94,7 +94,7 @@ kubectl create secret generic cloudflare-api-key --from-literal=apiKey=replace_t
 
 We will now proceed to install ExternalDNS using its Helm Chart.
 
-1. Add the ExternalDNS repo to Heml
+1. Add the ExternalDNS repo to Helm
 
     ```sh
     helm repo add external-dns-system https://kubernetes-sigs.github.io/external-dns/
@@ -115,7 +115,7 @@ We will now proceed to install ExternalDNS using its Helm Chart.
 
     extraArgs:
       - --zone-id-filter=zone_id_here # This is useful if you have multiple zones (domains) in the same DNS provider, so ExternalDNS only monitors one
-      - --trafik-disable-leegacy      # Disable listeners on Resources under traefik.containo.us
+      - --trafik-disable-legacy       # Disable listeners on Resources under traefik.containo.us
 
     sources:                          # I'm using the Gateway, Service and Traefik as a sources, default is ingress and services only
       - gateway-httproute             # This is to analyze the Gateway HTTPRoute
