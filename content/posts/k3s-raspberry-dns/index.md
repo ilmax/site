@@ -7,8 +7,9 @@ series: ["K3s on Raspberry PI"]
 series_order: 4
 tags: ["Kubernetes", "homelab", "rpi", "tutorial"]
 ---
+Can we automate DNS management in Kubernetes? Yes we can, if you would like to know more, follow along to discover what ExternalDNS can do to make our life easier.
 
-ExternalDNS is used to automate DNS management, it monitors some Kubernetes resources that it then uses to build DNS records and synchronize the changes with the DNS provider.
+ExternalDNS is used to automate DNS management, it essentially monitors some Kubernetes resources that then uses to build DNS records and finally it synchronize the changes with the DNS provider.
 
 Its goal is defined as:
 
@@ -18,7 +19,7 @@ ExternalDNS synchronizes exposed Kubernetes Services and Ingresses with DNS prov
 
 Automating DNS management helps to make sure we don't have to manually create DNS entries whenever we deploy a new service or that we don't leave [dangling DNS records](https://www.paloaltonetworks.com/cyberpedia/what-is-a-dangling-dns) whenever we delete an exposed service.
 
-The benefits ExternalDNS brings are twofold, the simplicity of deploying a new service in Kubernetes, with the required annotations and having the DNS record automatically created for us, while at the same time making sure we clean up all the records no longer in use.
+ExternalDNS offers two key benefits: it simplifies the deployment of new services in Kubernetes by automatically creating the necessary DNS records based on the provided annotations, and it ensures that any unused records are promptly cleaned up.
 
 ExternalDNS achieves this by watching some resources (e.g. `Ingress`, `Service`, `IngressRoute`, etc) it then generates the corresponding DNS records and it takes care of keeping our DNS provider in sync, simple enough right?
 
@@ -32,9 +33,9 @@ ExternalDNS generates DNS records from exposed Kubernetes **sources** that will 
 
 ### Sources
 
-ExternalDNS can monitor several different types of Kubernetes resources used to expose an application, among the supported ones we can find `Ingress`, `Services`, Gateway's `HTTPRoute` and also Traefik's own `IngressRoute` (the one I used in the preceding blog posts to expose my services).
+ExternalDNS can monitor several different types of Kubernetes resources used to expose an application, among the supported ones we can find `Ingress`, `Services`, Gateway's `HTTPRoute` and also Traefik's own `IngressRoute` (the one I used in the preceding blog posts to expose services).
 
-A source represents a single resource type that ExternalDNS watches for changes and is then used to construct the DNS records that will be synched in the DNS provider. The sources ExternalNDS watches are configurable and it supports multiple sources.
+A source represents a single Kubernetes resource type that ExternalDNS watches for changes and is then used to construct the DNS records that will be synched in the DNS provider. The sources that ExternalDNS monitors are configurable, and it supports multiple types of sources.
 
 {{<tip>}}
 The list of supported sources can be found in the [documentation](https://kubernetes-sigs.github.io/external-dns/v0.14.2/sources/sources/).
@@ -43,15 +44,15 @@ The list of supported sources can be found in the [documentation](https://kubern
 ### Providers
 
 A provider identifies the external service where your DNS zone lives, that's where ExternalDNS synchronizes the DNS records.
-There are a lot of supported providers: Google Cloud DNS, AWS Route 53, AzureDNS, CloudFlare, GoDaddy and even Pi-hole just to name a few. 
+There are a lot of supported providers: Google Cloud DNS, AWS Route 53, AzureDNS, CloudFlare, GoDaddy and even Pi-hole just to name a few.
 
 Each provider implementation comes with its stability levels, the one I'm interested in, CloudFlare, has a **beta** stability level which is defined as:
 
 > **Beta**: Community supported, well tested, but maintainers have no access to resources to execute integration tests on the real platform and/or are not using it in production.
 
-So far during my testing, the CloudFlare provider worked flawlessly for both additions and deletions work just fine.
+So far during my testing, the CloudFlare provider worked flawlessly for both additions and deletions.
 
-As is the case for the sources, the provider can also be configured.
+As is the case for the sources, the provider is also configureable.
 
 {{<tip>}}
 The list of supported providers and their relative stability levels can be found in the [documentation](https://kubernetes-sigs.github.io/external-dns/v0.14.2/#status-of-in-tree-providers).
@@ -72,7 +73,7 @@ The list of supported annotations can be found in the [documentation](https://ku
 
 To make sure ExternalDNS won't mess up the DNS records that already exist in the DNS zone, an ownership concept is implemented.
 
-There are various configurable mechanisms to implement this ownership mechanism. By default, a TXT record is used, but other available options are AWS DynamoDB or AWS Service Discovery.
+There are various configurable mechanisms to implement this ownership mechanism. By default, TXT records are used, but other available options are AWS DynamoDB or AWS Service Discovery.
 
 I will stick with the default TXT configuration because it doesn't require any other service running and it also allows me to quickly see, in my DNS provider, which records are created by ExternalDNS and which ones aren't.
 
@@ -80,18 +81,20 @@ I will stick with the default TXT configuration because it doesn't require any o
 
 ### ExternalDNS
 
-ExternalDNS needs to talk to a DNS provider, in my case CloudFlare, so it needs a way to authenticate to the DNS provider API, or more simply put an API access token. How to get such an access token is different for each provider, ExternalDNS [documentation](https://kubernetes-sigs.github.io/external-dns/v0.14.2/tutorials/cloudflare/) can guide you in the creation the access token for your DNS provider of choice.
+ExternalDNS requires communication with a DNS provider, such as CloudFlare in this case, and to do so, it needs an API access token for authentication. The process for obtaining this token varies depending on the provider.
 
-To make the provider access token available to ExternalDNS, we will put it in a Kubernetes secret that we will later reference. Proceed to create a secret with the following commands:
+ExternalDNS [documentation](https://kubernetes-sigs.github.io/external-dns/v0.14.2/tutorials/cloudflare/) can guide you in the creation of the access token for your DNS provider of choice.
+
+To make the provider access token available to ExternalDNS, we will put it in a Kubernetes secret that we will later reference. Let's proceed and create a secret with the following commands:
 
 ```sh
 kubectl create namespace external-dns-system
 kubectl create secret generic cloudflare-api-key --from-literal=apiKey=replace_this_with_your_secret -n external-dns-system
 ```
 
-We now proceed to install ExternalDNS using its Helm Chart.
+We will now proceed to install ExternalDNS using its Helm Chart.
 
-1. Add the ExternalDNS repo to Heml repos
+1. Add the ExternalDNS repo to Heml
 
     ```sh
     helm repo add external-dns-system https://kubernetes-sigs.github.io/external-dns/
@@ -130,26 +133,29 @@ We now proceed to install ExternalDNS using its Helm Chart.
 
 1. Install the chart using the following command:
 
-  ```sh
-  helm upgrade --install external-dns external-dns/external-dns --values external-dns-values.yml -n external-dns-system
-  ```
+    ```sh
+    helm upgrade --install external-dns external-dns/external-dns --values external-dns-values.yml -n external-dns-system
+    ```
 
 ### Traefik & Gateway API (Optional)
 
-This article is long enough that I won't go into details on the Gateway API, this may be an argument for a future post but, in short, it's a set of resources that will eventually replace the `Ingress` ones that give us a better way of configuring things, without resorting to tons of provider-specific annotations.
-If you want to have a look at how it works, we need to install the CRDs and configure Traefik to enable the Gateway API support.
+This article is already lengthy, so I won’t delve into the details of the Gateway API here. That might be a topic for a future post. In brief the Gateway API is a set of resources that will eventually replace the `Ingress` ones.
 
-If you haven't done so, you need to install the custom CRDs before using the Gateway resource in Kubernetes, you can install the latest iteration of those CRDs (1.1.0 at the time of writing) using this command:
+Since the Ingress resource has a limited configuration area, all the implementations (NGINX, Traefik, Kong, Envoy, etc) came up with different annotations to implement specific functionality. The Gateway resource is the response to this fragmentation, it allows you to specify a lot more behaviors in a vendor-agnostic way, so it’s a welcome addition.
+
+If you're interested in exploring it, you'll need to install the CRDs and configure Traefik to support the Gateway API.
+
+Before using the Gateway resource in Kubernetes you have install the latest iteration of those CRDs (1.1.0 at the time of writing) using this command:
 
 ```sh
 kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.1.0/experimental-install.yaml
 ```
 
 {{<note>}}
-I won't configure TLS with the Gateway for now because I haven't yet figure out how it works, I'd like to configure a different certificate for every site, but it seems to me that, at the moment, you either use a single TLS certificate with all the hostnames at the gateway controller level, or you have to use `TLSRoute` that's still in the experimental channel at the time of writing (August 2024)
+I won't configure TLS with the Gateway API because I haven't yet figure out how it works, I'd like to configure a different certificate for every site, but it seems to me that, at the moment, you either use a single TLS certificate with all the hostnames at the gateway controller level, or you have to use a `TLSRoute` that's still in the experimental channel at the time of writing (August 2024)
 {{</note>}}
 
-Traefik installation also needs to be updated to enable the kubernetesGateway provider, specify which namespaces are allowed to associate routes to the gateway and specify what the Gateway's address is using one of the supported ways. I'm using a service reference.
+Traefik installation also needs to be updated to enable the kubernetesGateway provider, specify which namespaces are allowed to associate routes to the gateway and specify what to use as the Gateway's address via one of the supported ways.
 
 Traefik's Gateway address can be configured in 3 different ways:
 
@@ -157,8 +163,10 @@ Traefik's Gateway address can be configured in 3 different ways:
 - Using a hostname
 - Using a service reference
 
+I've opted to use the service reference, so I configured it to point to Traefik own ingress controller service.
+
 {{<tip>}}
-You can dig deeper in the Traefik's [documentation](https://doc.traefik.io/traefik/providers/kubernetes-gateway/#statusaddress)
+If you want to know more about the Traefik's Gateway address, make sure to check out the [documentation](https://doc.traefik.io/traefik/providers/kubernetes-gateway/#statusaddress)
 {{</tip>}}
 
 ```yml
@@ -526,7 +534,7 @@ providers:
   kubernetesIngress:
     enabled: false
   kubernetesGateway:
-    enabled: true         # Enable the Gateway provider
+    enabled: true           # Enable the Gateway provider
 
 rbac:
   enabled: true
@@ -536,7 +544,7 @@ service:
   type: LoadBalancer
 
 gateway:
-  annotations:
+  annotations:              # Added annotation to create a CNAME record
     external-dns.alpha.kubernetes.io/target: k8slab.app
   listeners:
     web:
@@ -544,7 +552,7 @@ gateway:
     websecure: null         # Do not enable the HTTPS listener, due to the reason explained above
 ```
 
-Now we can install update the Traefik installation using the following command:
+Now we can update the Traefik installation using the following command:
 
 ```sh
 helm upgrade --install --namespace=traefik traefik traefik/traefik --values=traefikvalues.yml
@@ -559,7 +567,7 @@ TXT     cname-test  "heritage=external-dns,external-dns/owner=external-dns,exter
 TXT     test        "heritage=external-dns,external-dns/owner=external-dns,external-dns/resource=httproute/demo-dns-site/nginx-service-http-route"
 ```
 
-There you have it, now you see how to configure ExternalDNS with Traefik, you can pick to generate A records or CNAME easily using either a `Service`, a Traefik `IngressRoute` or an `HTTPRoute`. You can pick the option you prefer based on your network requirements, in my case, I went with the A record because the IP of my ingress controller service never changes.
+There you have it—now you know how to configure ExternalDNS with Traefik. You can easily choose between generating A records or CNAMEs using a `Service`, Traefik `IngressRoute`, or the Gateway `HTTPRoute`, depending on your network needs. In my case, I opted for A records since the IP of my ingress controller service remains constant.
 
 ## Troubleshooting
 
@@ -583,18 +591,15 @@ The second issue I found was the inability to generate any record at all when us
 time="2024-07-29T13:00:07Z" level=debug msg="Endpoints generated from service: demo-dns-site/nginx-service: []"
 ```
 
-This was because my `IngressRoute` was missing the target annotation, such annotation specifies the IP or Hostname of the DNS target, if you omit this annotation, nothing will be generated.
+This was because my `IngressRoute` was missing the target annotation, such annotation specifies the IP or Hostname of the DNS target, if you omit this annotation while using an `IngressRoute`, nothing will be generated.
 
-In my wishful thinking, I was hoping that ExternalDNS could resolve the Traefik service and use the external IP as a target but there's no relationship between the `IngressRoute` and the Traefik service, so ExternalDNS explicitly requires you to specify a target annotation.
+In my wishful thinking, I was hoping that ExternalDNS could resolve the Traefik service and use the external IP as a target but there's no relationship between the `IngressRoute` and the Traefik ingress controller service, so ExternalDNS explicitly requires you to specify a target annotation.
 
 If the target is an IPv4, an A address is generated, if the target is an IPv6 an AAAA record is generated, otherwise the target is interpreted as a string and a CNAME is thus generated.
 
-This annoyed me because it meant that the configuration had to be repeated on every `IngressRoute`, making it more difficult to change, especially in an environment that's mostly a test cluster. I decided then to look into the new Kubernetes networking resource, the Gateway.
+This annoyed me because it meant that the configuration had to be repeated on every `IngressRoute`, making it more difficult to change, especially in an environment that's mostly a test cluster. I decided then to look into the new Kubernetes networking resources, the Gateway API.
 
 ### Gateway traefik/traefik-gateway has not accepted HTTPRoute demo-dns-site/nginx-service-http-route
-
-The Gateway API is a new and improved version of the old `Ingress` resource, this was to unify the configuration across the various implementations. Since the `Ingress` resource has a limited configuration area, all the implementations (NGINX, Traefik, Kong, Envoy, etc) came up with different annotations to implement specific functionality.
-The Gateway resource is the response to this fragmentation, it allows you to specify a lot more behaviors in a vendor-agnostic way, so it's a welcome addition.
 
 The Gateway resources, `HTTPRoute` and `GRPCRoute` resources have to specify the parent Gateway controller instance. A Gateway controller is in turn assigned an address. This seems perfect to avoid duplication I was facing with the `IngressRoute` option so I decided to replace the Traefik `IngressRoute` with a Gateway `HTTPRoute` and immediately ran into the following error:
 
@@ -608,15 +613,15 @@ The issue this time was related to Traefik, to resolve it I had to update the Tr
 gateway:
   listeners:
     web:
-      namespacePolicy: All
-    websecure: null # Do not install the websecure listener for now     
+      namespacePolicy: All  # Allow resource from all namespaces to be accepted by the gateway
+    websecure: null         # Do not install the websecure listener     
 ```
 
 ### No records are created for an HTTPRoute
 
 As soon as the route acceptance issue was fixed after re-deploying Traefik, the new error was the good old: Hey I don't know what DNS records to create for this `HTTPRoute` 🤷‍♂️.
 
-To troubleshoot this issue I went down a rabbit hole, I decided to clone both ExternalDNS and Traefik and added some logging because, truth be told, ExternalDNS with debug logging enabled is still not logging enough information to easily troubleshoot failures.
+To troubleshoot this issue I went down a rabbit hole, I decided to clone both ExternalDNS and Traefik code bases and added some logging because, truth be told, ExternalDNS with debug logging enabled is still not logging enough information to easily troubleshoot failures.
 
 ```sh
 time="2024-08-07T06:07:39Z" level=debug msg="Endpoints generated from HTTPRoute demo-dns-site/nginx-service-http-route: []"
@@ -640,10 +645,10 @@ But none of them worked, after a deeper investigation, it turned out to be a rec
 
 ## Conclusion
 
-As you can see this was not as straightforward as expected, but in the end we managed to configure ExternalDNS and have it sync our DNS records correctly.
+As you can see this was not as straightforward as expected, but in the end I managed to configure ExternalDNS and have it sync my DNS records correctly.
 
-Together with cert-manager, ExternalDNS allows us to completely automate the DNS management, allowing us to programmatically define, via Kubernetes manifests, the DNS configuration and the TLS certificate for our cluster, that's pretty neat and handy if you ask me.
+With cert-manager and ExternalDNS working together, we can fully automate DNS management. This setup allows us to define DNS configurations and TLS certificates programmatically through Kubernetes manifests, making it incredibly convenient and efficient.
 
-One more step in our homelab journey automation!
+One more step in the homelab journey automation!
 
 Till the next time.
