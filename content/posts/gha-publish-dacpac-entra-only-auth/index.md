@@ -3,7 +3,7 @@ title: "Publish Dacpac to Azure SQL with Entra-only authentication using GitHub 
 description: How to use GitHub Actions to publish dacpac database projects to Azure SQL when Entra-Only authentication is enabled
 date: 2024-08-20T19:59:36+02:00
 tags: [Azure, DevOps, SQL, Terraform]
-draft: true
+draft: false
 ---
 
 In Azure, most services nowadays supports Microsoft Entra based authentication, for example via a system managed identity or a user assigned one.
