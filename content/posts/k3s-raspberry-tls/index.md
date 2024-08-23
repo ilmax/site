@@ -1,6 +1,6 @@
 ---
 title: "Install K3s on a Raspberry PI - TLS certificates"
-description: Use Let'sEncrypt free TLS certificates on Kubernetes
+description: Step-by-step Comprehensive guide to installing K3s on Raspberry Pi and securing Kubernetes with free TLS certificates from Let's Encrypt.
 date: 2024-07-16T20:45:15+02:00
 draft: false
 series: ["K3s on Raspberry PI"]
@@ -322,6 +322,7 @@ Now, that we correctly obtained a staging certificate, it's time to configure ce
               name: cloudflare-api-key-secret
               key: api-key
   ```
+  
   {{<caution>}}
   Make sure you replace the email in the manifest above.
   {{</caution>}}

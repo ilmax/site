@@ -15,31 +15,23 @@ runs:
       run: |
         npm install --global @343dev/optimizt
 
-    - name: Get sha of the last commit
-      shell: bash
-      id: last-commit
-      run: |
-        echo "sha=$(git rev-parse origin/main)" >> $GITHUB_ENV
-
-    - name: Get changed files
-      id: changed-files
-      uses: tj-actions/changed-files@v44
-      with:
-        base_sha: ${{ env.sha }}
-        files: |
-          **.jpg
-          **.jpeg
-          **.png
-          **.svg
-          **.webp
-
     - name: Run image compression
-      if: steps.changed-files.outputs.any_changed == 'true'
-      env:
-        ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
       shell: bash
+      id: changed-files
       run: |
-        for file in ${ALL_CHANGED_FILES}; do
+        head_of_main=$(git rev-parse origin/main)
+        head_of_current=$(git rev-parse HEAD)
+        changed_files=$(git diff --name-only $head_of_main $head_of_current)
+        changed_images=$(echo "$changed_files" | grep -E '.*\.(jpg|jpeg|png|svg|webp)')
+        if [ -z "$changed_images" ]; then
+          echo "No images have been changed"
+          echo "any_changed=false" >> $GITHUB_OUTPUT
+        else
+          echo "Images have been changed, will optimize them!"
+          echo "any_changed=true" >> $GITHUB_OUTPUT
+        fi
+        for file in $changed_images; do
           echo compressing image $file 
           optimizt --verbose -l $file
         done
+
