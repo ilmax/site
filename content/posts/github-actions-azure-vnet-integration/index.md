@@ -1,6 +1,6 @@
 ---
 title: "GitHub Actions Azure Vnet Integration"
-description: How to connect from GitHub Actions to Azure PaaS when public access is disabled
+description: Securely connect GitHub Actions to Azure PaaS with public access disabled. Follow this guide to seamless CI/CD integration while keeping your resources safe.
 date: 2024-07-24T14:26:00+02:00
 draft: false
 tags: ["github", "azure", "devops", "terraform"]
