@@ -1,6 +1,6 @@
 ---
 title: "Install K3s on a Raspberry PI - Automatic external DNS management"
-description: How to use ExternalDNS to automatically synchronize DNS record with CloudFlare or any other DNS provider
+description: Let's learn how to use ExternalDNS to automatically synchronize DNS record with CloudFlare or any other DNS provider in Kubernetes
 date: 2024-08-05T21:11:10+02:00
 draft: false
 series: ["K3s on Raspberry PI"]
@@ -170,7 +170,7 @@ If you want to know more about Traefik's Gateway address, make sure to check out
 {{</tip>}}
 
 ```yml
-# I've added a comment to all the changed 
+# I've added a comment to all the changed
 # configuration values with an explanation
 additionalArguments:
   # Sets logging level
@@ -270,7 +270,7 @@ spec:
         ports:
         - containerPort: 80
 ---
-# Paste the remainder of the configuration here below based on the 
+# Paste the remainder of the configuration here below based on the
 # chosen approach and apply using kubectl apply -f
 ```
 
@@ -493,7 +493,7 @@ To get a CNAME generated when using the gateway `HTTPRoute` resource, we need to
 Since the gateway class is created by Traefik, we need to change the values file used to install Traefik and install it again, you can see the updated value file below:
 
 ```yml
-# I've added a comment to all the changed 
+# I've added a comment to all the changed
 # configuration values with an explanation
 additionalArguments:
   # Sets logging level
@@ -614,7 +614,7 @@ gateway:
   listeners:
     web:
       namespacePolicy: All  # Allow resource from all namespaces to be accepted by the gateway
-    websecure: null         # Do not install the websecure listener     
+    websecure: null         # Do not install the websecure listener
 ```
 
 ### No records are created for an HTTPRoute
