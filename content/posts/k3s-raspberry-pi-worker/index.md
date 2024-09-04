@@ -1,6 +1,6 @@
 ---
 title: "Install K3s on a Raspberry PI - Worker node"
-description: How to install a Kubernetes multi-node cluster on Raspberry PI 5, the worker nodes setup
+description: Let's learn how to install a Kubernetes (k3s) multi-node cluster on Raspberry PI 5, worker nodes setup
 date: 2024-07-12T09:23:18+02:00
 draft: false
 series: ["K3s on Raspberry PI"]
@@ -35,7 +35,7 @@ More information on what is the **local** domain and how it works can be found [
 {{</note>}}
 
 ### Configure a static IP on the Raspberry PI
- 
+
 ```sh
 nmcli con show
 connetion={add your connection name here}
@@ -48,7 +48,7 @@ sudo reboot
 ### Configure the kernel to enable cgroup v2
 
 ```sh
-echo ' cgroup_memory=1 cgroup_enable=memory' | sudo tee -a /boot/firmware/cmdline.txt 
+echo ' cgroup_memory=1 cgroup_enable=memory' | sudo tee -a /boot/firmware/cmdline.txt
 sudo reboot
 ```
 

@@ -1,6 +1,6 @@
 ---
 title: "Install K3s on a Raspberry PI - Master node"
-description: How to install a Kubernetes multi-node cluster on Raspberry PI 5, the master node setup
+description: Let's learn how to install a Kubernetes (k3s) multi-node cluster on Raspberry PI 5, master node setup
 date: 2024-07-01T18:55:40+02:00
 draft: false
 series: ["K3s on Raspberry PI"]
@@ -80,7 +80,7 @@ If you're using the WiFi interface, you can get the name of the connection using
 K3s requires cgroup v2 to function and, by default, they're disabled in the Raspberry PI O.S. so we need to enable them as follows:
 
 ```sh
-echo ' cgroup_memory=1 cgroup_enable=memory' | sudo tee -a /boot/firmware/cmdline.txt 
+echo ' cgroup_memory=1 cgroup_enable=memory' | sudo tee -a /boot/firmware/cmdline.txt
 sudo reboot
 ```
 
@@ -219,7 +219,7 @@ Logically we need to reserve some IP in the DHCP configuration so that there won
      namespace: metallb-system
    spec:
      addresses:
-     ## Replace this with your IP address reserved range. 
+     ## Replace this with your IP address reserved range.
      ## This should be on the same network as your nodes!
      ## This address range should be blocked on your router DHCP config
      - 192.168.2.210-192.168.2.230
@@ -321,7 +321,7 @@ Anyway let's see how to install and configure Traefik:
     deployment:
       enabled: true
       replicas: 2
-    
+
     ports:
       web:
         redirectTo:
@@ -332,11 +332,11 @@ Anyway let's see how to install and configure Traefik:
         advertisedPort: 4443
         tls:
           enabled: true
-    
+
     ingressRoute:
       dashboard:
         enabled: false
-    
+
     providers:
       kubernetesCRD:
         enabled: true
@@ -346,10 +346,10 @@ Anyway let's see how to install and configure Traefik:
         allowExternalNameServices: true
         publishedService:
           enabled: false
-    
+
     rbac:
       enabled: true
-    
+
     service:
       enabled: true
       type: LoadBalancer
