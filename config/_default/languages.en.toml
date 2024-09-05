@@ -9,7 +9,7 @@ isoCode = "en"
 rtl = false
 dateFormat = "2 January 2006"
 
-[author]
+[params.author]
 name = "Massimiliano Donini"
 image = "avatar.jpg"
 links = [ { github = "https://github.com/ilmax" }, { linkedin = "https://www.linkedin.com/in/massimiliano-donini/" }, { x-twitter = "https://x.com/maxx_don" } ]
