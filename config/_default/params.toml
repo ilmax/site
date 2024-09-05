@@ -110,3 +110,17 @@ cardViewScreenWidth = false
 [buymeacoffee]
 
 [verification]
+
+[giscus]
+repo = 'ilmax/site'
+repoID = 'R_kgDOIvGqCw'
+category = 'Post Comments'
+categoryID = 'DIC_kwDOIvGqC84CTeD0'
+mapping = 'pathname'
+strict = 1
+reactionsEnabled = '1'
+emitMetadata = '0'
+inputPosition = 'bottom'
+theme = 'cobalt'
+lang = 'en'
+loading = 'lazy'

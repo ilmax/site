@@ -9,9 +9,9 @@ isoCode = "en"
 rtl = false
 dateFormat = "2 January 2006"
 
-[author]
+[params.author]
 name = "Massimiliano Donini"
 image = "avatar.jpg"
 links = [ { github = "https://github.com/ilmax" }, { linkedin = "https://www.linkedin.com/in/massimiliano-donini/" }, { x-twitter = "https://x.com/maxx_don" } ]
 headline = "Software Architecture | Cloud | dotnet | DevOps | Raspberry PI all the things 🚀"
-bio = "🔭 I’m currently working as a freelance Cloud Architect in The Netherlands 🇳🇱 I’m looking to collaborate on Azure and the dotnet technology landscape 💬 Ask me about Azure, dotnet, EF Core, ASP.NET Core, terraform, GitHub & CI/CD automation"
+bio = "🚀 Freelance Cloud Architect | Based in The Netherlands 🇳🇱 | Ready to collaborate on cutting-edge Azure & .NET projects! 💡 Let's talk Azure, .NET, EF Core, ASP.NET Core, Terraform, GitHub, and CI/CD automation. Got a question or an exciting project? Let's connect! 🔥"
