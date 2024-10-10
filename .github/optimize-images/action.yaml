@@ -19,10 +19,12 @@ runs:
       shell: bash
       id: changed-files
       run: |
+        echo Starting image compression
         head_of_main=$(git rev-parse origin/main)
         head_of_current=$(git rev-parse HEAD)
         changed_files=$(git diff --name-only $head_of_main $head_of_current)
         changed_images=$(echo "$changed_files" | grep -E '.*\.(jpg|jpeg|png|svg|webp)')
+        echo Checking for changed images
         if [ -z "$changed_images" ]; then
           echo "No images have been changed"
           echo "any_changed=false" >> $GITHUB_OUTPUT
@@ -30,6 +32,7 @@ runs:
           echo "Images have been changed, will optimize them!"
           echo "any_changed=true" >> $GITHUB_OUTPUT
         fi
+        echo Starting image compression
         for file in $changed_images; do
           echo compressing image $file 
           optimizt --verbose -l $file
