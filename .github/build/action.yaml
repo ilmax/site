@@ -16,4 +16,5 @@ runs:
         extended: true
 
     - name: Build
+      shell: bash
       run: hugo --minify --baseURL ${{ steps.pages.outputs.base_url }}   
