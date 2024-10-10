@@ -6,7 +6,7 @@ draft: true
 tags: [azure, dotnet, linux, webjobs]
 ---
 
-I decided to write this blog post to dig a little deeper into one of the MS Build 2024 announcements that caught my attention. This caught my attention because WebJobs were previously only supported on Windows-based App Service instances, so I decided to look into it. After looking at the documentation on Microsoft Learn, which I found to be minimalistic at best, I decided to document my steps in setting it up, mainly for future reference.
+In this blog post, I want to explore one of the MS Build 2024 announcements that stood out to me. The reason it caught my eye is that WebJobs, which were previously only available for Windows-based App Service instances, now have expanded support. After reviewing the rather sparse documentation on Microsoft Learn, I decided to document the setup process for my own reference and to share with others who might find it helpful.
 
 ## What are WebJobs
 
