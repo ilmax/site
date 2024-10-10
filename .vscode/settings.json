@@ -3,5 +3,8 @@
     "MD033": {
         "allowed_elements": ["article", "tip", "note", "warn", "caution", "figure", "lead"]
     }
+  },
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-action.json": "file:///Users/massimilianodonini/code/personal/site/.github/workflows/deploy.yaml"
   }
 }
