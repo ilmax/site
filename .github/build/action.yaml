@@ -5,12 +5,6 @@ author: "Massimiliano Donini"
 runs:
   using: "composite"
   steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive # Fetch Hugo themes (true OR recursive)
-        fetch-depth: 0 # Fetch all history for .GitInfo and .Lastmod
-
     - name: Setup Pages
       id: pages
       uses: actions/configure-pages@v5
