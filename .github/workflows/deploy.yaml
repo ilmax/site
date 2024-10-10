@@ -3,7 +3,6 @@ name: Build and deploy Hugo site via GitHub Pages
 on:
   push:
     branches: [main]
-  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -12,29 +11,15 @@ permissions:
   id-token: write
 
 jobs:
+  # Build The Hugo Site
   build:
+    name: Build Hugo site
     env:
       HUGO_ENV: production
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive # Fetch Hugo themes (true OR recursive)
-          fetch-depth: 0 # Fetch all history for .GitInfo and .Lastmod
-
-      - name: Setup Pages
-        id: pages
-        uses: actions/configure-pages@v5
-
-      - name: Setup Hugo
-        uses: peaceiris/actions-hugo@v3
-        with:
-          hugo-version: "latest"
-          extended: true
-
-      - name: Build
-        run: hugo --minify --baseURL ${{ steps.pages.outputs.base_url }}   
+      - name: Build Hugo site
+        uses: ./.github/build
 
       - name: Create IndexNow API key
         if: ${{ github.event_name == 'push' }}
@@ -46,9 +31,9 @@ jobs:
         with:
           path: ./public
 
-  # Deployment job
+  # Deploy The Hugo Site to GitHub Pages
   deploy:
-    if: ${{ github.event_name != 'pull_request' }}
+    name: Deploy Hugo site to GitHub Pages
     needs: build
     runs-on: ubuntu-latest
     environment:
