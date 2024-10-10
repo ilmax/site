@@ -8,6 +8,7 @@ permissions:
 jobs:
   # Build The Hugo Site
   build:
+    name: Build Hugo site
     env:
       HUGO_ENV: production
     runs-on: ubuntu-latest
