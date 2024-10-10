@@ -2,7 +2,7 @@
 title: "Having a look at the new WebJobs support in App Service for Linux"
 description: In this step by step guide, you will see how to create and deploy a WebJob in Azure App Service for Linux using .NET
 date: 2024-10-03T08:18:59+02:00
-draft: true
+draft: false
 tags: [azure, dotnet, linux, webjobs]
 ---
 
